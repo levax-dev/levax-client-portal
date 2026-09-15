@@ -84,7 +84,11 @@ function TicketFilterTable({
             className="pl-8"
           />
         </div>
-        <Select value={status} onValueChange={(value) => setStatus(value ?? "all")}>
+        <Select
+          items={{ all: "All statuses", ...Object.fromEntries(statuses.map((s) => [s, s])) }}
+          value={status}
+          onValueChange={(value) => setStatus(value ?? "all")}
+        >
           <SelectTrigger className="w-full sm:w-44">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -98,7 +102,11 @@ function TicketFilterTable({
           </SelectContent>
         </Select>
         {departments.length > 1 && (
-          <Select value={department} onValueChange={(value) => setDepartment(value ?? "all")}>
+          <Select
+            items={{ all: "All departments", ...Object.fromEntries(departments.map((d) => [d, d])) }}
+            value={department}
+            onValueChange={(value) => setDepartment(value ?? "all")}
+          >
             <SelectTrigger className="w-full sm:w-44">
               <SelectValue placeholder="Department" />
             </SelectTrigger>
@@ -112,7 +120,11 @@ function TicketFilterTable({
             </SelectContent>
           </Select>
         )}
-        <Select value={priority} onValueChange={(value) => setPriority(value ?? "all")}>
+        <Select
+          items={{ all: "All priorities", urgent: "Urgent", high: "High", medium: "Medium", low: "Low" }}
+          value={priority}
+          onValueChange={(value) => setPriority(value ?? "all")}
+        >
           <SelectTrigger className="w-full sm:w-40">
             <SelectValue placeholder="Priority" />
           </SelectTrigger>

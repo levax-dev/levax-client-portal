@@ -65,7 +65,7 @@ export function NewProjectForm({
         </Field>
         <Field>
           <FieldLabel htmlFor="leadId">Project lead</FieldLabel>
-          <Select name="leadId">
+          <Select name="leadId" items={Object.fromEntries(staffProfiles.map((p) => [p.id, p.full_name ?? "Unnamed"]))}>
             <SelectTrigger id="leadId" className="w-full">
               <SelectValue placeholder="Unassigned" />
             </SelectTrigger>

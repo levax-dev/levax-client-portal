@@ -15,8 +15,11 @@ export function DepartmentFilter({
 
   if (departments.length < 2) return null
 
+  const items = { all: "All departments", ...Object.fromEntries(departments.map((d) => [d.id, d.name])) }
+
   return (
     <Select
+      items={items}
       value={activeDeptId ?? "all"}
       onValueChange={(value) => router.push(value && value !== "all" ? `/dashboard?dept=${value}` : "/dashboard")}
     >

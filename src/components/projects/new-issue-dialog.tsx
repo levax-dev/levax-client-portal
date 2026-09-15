@@ -66,7 +66,11 @@ export function NewIssueDialog({
             <div className="grid grid-cols-2 gap-3">
               <Field>
                 <FieldLabel htmlFor="issue-type">Type</FieldLabel>
-                <Select name="type" defaultValue="task">
+                <Select
+                  name="type"
+                  items={{ task: "Task", bug: "Bug", feature: "Feature", ticket: "Ticket" }}
+                  defaultValue="task"
+                >
                   <SelectTrigger id="issue-type" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
@@ -80,7 +84,11 @@ export function NewIssueDialog({
               </Field>
               <Field>
                 <FieldLabel htmlFor="issue-priority">Priority</FieldLabel>
-                <Select name="priority" defaultValue="medium">
+                <Select
+                  name="priority"
+                  items={{ low: "Low", medium: "Medium", high: "High", urgent: "Urgent" }}
+                  defaultValue="medium"
+                >
                   <SelectTrigger id="issue-priority" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
@@ -95,7 +103,10 @@ export function NewIssueDialog({
             </div>
             <Field>
               <FieldLabel htmlFor="issue-assignee">Assignee</FieldLabel>
-              <Select name="assigneeId">
+              <Select
+                name="assigneeId"
+                items={Object.fromEntries(assignableUsers.map((u) => [u.id, u.full_name ?? "Unnamed"]))}
+              >
                 <SelectTrigger id="issue-assignee" className="w-full">
                   <SelectValue placeholder="Unassigned" />
                 </SelectTrigger>

@@ -35,7 +35,12 @@ export function NewTicketForm({ projects }: { projects: ProjectOption[] }) {
         )}
         <Field>
           <FieldLabel htmlFor="projectId">Project</FieldLabel>
-          <Select name="projectId" value={projectId} onValueChange={(value) => value && setProjectId(value)}>
+          <Select
+            name="projectId"
+            items={Object.fromEntries(projects.map((p) => [p.id, p.name]))}
+            value={projectId}
+            onValueChange={(value) => value && setProjectId(value)}
+          >
             <SelectTrigger id="projectId" className="w-full">
               <SelectValue />
             </SelectTrigger>
@@ -51,7 +56,12 @@ export function NewTicketForm({ projects }: { projects: ProjectOption[] }) {
         {departments.length > 1 && (
           <Field>
             <FieldLabel htmlFor="departmentId">Department</FieldLabel>
-            <Select name="departmentId" defaultValue={departments[0]?.id}>
+            <Select
+              key={projectId}
+              name="departmentId"
+              items={Object.fromEntries(departments.map((d) => [d.id, d.name]))}
+              defaultValue={departments[0]?.id}
+            >
               <SelectTrigger id="departmentId" className="w-full">
                 <SelectValue />
               </SelectTrigger>

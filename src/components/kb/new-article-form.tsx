@@ -32,7 +32,7 @@ export function NewArticleForm({ categories }: { categories: KbCategory[] }) {
         </Field>
         <Field>
           <FieldLabel htmlFor="categoryId">Category</FieldLabel>
-          <Select name="categoryId">
+          <Select name="categoryId" items={Object.fromEntries(categories.map((c) => [c.id, c.name]))}>
             <SelectTrigger id="categoryId" className="w-full">
               <SelectValue placeholder="Uncategorized" />
             </SelectTrigger>

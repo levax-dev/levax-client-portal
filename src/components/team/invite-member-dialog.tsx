@@ -53,7 +53,7 @@ export function InviteMemberDialog({ orgId }: { orgId?: string } = {}) {
             </Field>
             <Field>
               <FieldLabel htmlFor="invite-role">Role</FieldLabel>
-              <Select name="role" defaultValue="member">
+              <Select name="role" items={{ member: "Member", admin: "Admin" }} defaultValue="member">
                 <SelectTrigger id="invite-role" className="w-full">
                   <SelectValue />
                 </SelectTrigger>

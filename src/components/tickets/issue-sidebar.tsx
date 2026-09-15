@@ -69,6 +69,7 @@ export function IssueSidebar({
             <Label className="text-xs text-muted-foreground">Status</Label>
             {canEdit ? (
               <Select
+                items={Object.fromEntries(columns.map((c) => [c.id, c.name]))}
                 defaultValue={currentColumnId}
                 disabled={isPending}
                 onValueChange={(value) => value && startTransition(() => setIssueColumn(issueId, value))}
@@ -93,6 +94,7 @@ export function IssueSidebar({
             <Label className="text-xs text-muted-foreground">Priority</Label>
             {canEdit ? (
               <Select
+                items={{ low: "Low", medium: "Medium", high: "High", urgent: "Urgent" }}
                 defaultValue={priority}
                 disabled={isPending}
                 onValueChange={(value) =>
@@ -118,6 +120,10 @@ export function IssueSidebar({
             <Label className="text-xs text-muted-foreground">Assignee</Label>
             {canEdit ? (
               <Select
+                items={{
+                  unassigned: "Unassigned",
+                  ...Object.fromEntries(assignableUsers.map((p) => [p.id, p.full_name ?? "Unnamed"])),
+                }}
                 defaultValue={assignee?.id ?? "unassigned"}
                 disabled={isPending}
                 onValueChange={(value) =>
@@ -199,6 +205,10 @@ export function IssueSidebar({
           </CardHeader>
           <CardContent className="space-y-2">
             <Select
+              items={{
+                none: "Not linked",
+                ...Object.fromEntries(linkableProjects.map((p) => [p.id, p.name])),
+              }}
               defaultValue={linkedProject?.id ?? "none"}
               disabled={isPending}
               onValueChange={(value) =>
