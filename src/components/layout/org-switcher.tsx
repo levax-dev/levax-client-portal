@@ -42,7 +42,7 @@ export function OrgSwitcher({
         {organizations.map((org) => (
           <DropdownMenuItem
             key={org.id}
-            onSelect={() => startTransition(() => setActiveOrg(org.id))}
+            onClick={() => startTransition(() => setActiveOrg(org.id))}
           >
             <span className="flex-1 truncate">{org.name}</span>
             {org.id === activeOrgId && <Check className={cn("size-4")} />}

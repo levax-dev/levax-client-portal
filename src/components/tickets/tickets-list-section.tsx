@@ -25,7 +25,7 @@ export async function TicketsListSection({ orgParam }: { orgParam?: string }) {
     ? await supabase
         .from("issues")
         .select(
-          "id, title, priority, created_at, board_columns(name, color), profiles!issues_assignee_id_fkey(full_name, avatar_url)"
+          "id, title, priority, created_at, reporter_id, board_columns(name, color), profiles!issues_assignee_id_fkey(id, full_name, avatar_url)"
         )
         .eq("org_id", org.id)
         .eq("type", "ticket")
@@ -37,6 +37,7 @@ export async function TicketsListSection({ orgParam }: { orgParam?: string }) {
     title: row.title,
     priority: row.priority,
     created_at: row.created_at,
+    reporterId: row.reporter_id,
     column: (row.board_columns as unknown as TicketRow["column"]) ?? null,
     assignee: (row.profiles as unknown as TicketRow["assignee"]) ?? null,
   }))
@@ -46,7 +47,7 @@ export async function TicketsListSection({ orgParam }: { orgParam?: string }) {
       {user.isStaff && organizations && (
         <OrgSwitcher organizations={organizations} activeOrgId={org?.id ?? null} />
       )}
-      <TicketsTable tickets={tickets} />
+      <TicketsTable tickets={tickets} currentUserId={user.id} />
     </div>
   )
 }

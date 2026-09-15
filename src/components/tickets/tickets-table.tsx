@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { IssuePriority } from "@/types/database"
 
@@ -25,15 +26,22 @@ export interface TicketRow {
   title: string
   priority: IssuePriority
   created_at: string
+  reporterId: string | null
   column: { name: string; color: string } | null
-  assignee: { full_name: string | null; avatar_url: string | null } | null
+  assignee: { id: string; full_name: string | null; avatar_url: string | null } | null
 }
 
 function initials(name: string) {
   return name.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase()
 }
 
-export function TicketsTable({ tickets }: { tickets: TicketRow[] }) {
+function TicketFilterTable({
+  tickets,
+  emptyMessage,
+}: {
+  tickets: TicketRow[]
+  emptyMessage: string
+}) {
   const [query, setQuery] = useState("")
   const [priority, setPriority] = useState<string>("all")
   const [status, setStatus] = useState<string>("all")
@@ -52,11 +60,7 @@ export function TicketsTable({ tickets }: { tickets: TicketRow[] }) {
 
   if (tickets.length === 0) {
     return (
-      <EmptyState
-        icon={Ticket}
-        title="No tickets yet"
-        description="Raise a ticket and it will show up here."
-      />
+      <EmptyState icon={Ticket} title="No tickets" description={emptyMessage} />
     )
   }
 
@@ -161,5 +165,30 @@ export function TicketsTable({ tickets }: { tickets: TicketRow[] }) {
         )}
       </div>
     </div>
+  )
+}
+
+export function TicketsTable({ tickets, currentUserId }: { tickets: TicketRow[]; currentUserId: string }) {
+  const myTickets = useMemo(
+    () => tickets.filter((t) => t.assignee?.id === currentUserId || t.reporterId === currentUserId),
+    [tickets, currentUserId]
+  )
+
+  return (
+    <Tabs defaultValue="all">
+      <TabsList>
+        <TabsTrigger value="all">All tickets ({tickets.length})</TabsTrigger>
+        <TabsTrigger value="mine">My tickets ({myTickets.length})</TabsTrigger>
+      </TabsList>
+      <TabsContent value="all" className="mt-3">
+        <TicketFilterTable tickets={tickets} emptyMessage="Raise a ticket and it will show up here." />
+      </TabsContent>
+      <TabsContent value="mine" className="mt-3">
+        <TicketFilterTable
+          tickets={myTickets}
+          emptyMessage="Tickets assigned to you or raised by you will show up here."
+        />
+      </TabsContent>
+    </Tabs>
   )
 }
