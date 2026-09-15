@@ -4,6 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
+import { Button } from "@/components/ui/button"
 import {
   Sidebar,
   SidebarContent,
@@ -17,6 +18,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { mainNav, orgNav, staffNav, type NavItem } from "@/lib/nav"
 import { cn } from "@/lib/utils"
 
@@ -37,15 +39,21 @@ export function AppSidebar({
     return true
   }
 
+  const isActivePath = (url: string) => pathname === url || pathname.startsWith(`${url}/`)
+
   const renderItems = (items: NavItem[]) =>
     items.filter(canShow).map((item) => {
-      const isActive = pathname === item.url || pathname.startsWith(`${item.url}/`)
+      const isActive = isActivePath(item.url)
       return (
         <SidebarMenuItem key={item.url}>
           <SidebarMenuButton
             isActive={isActive}
             tooltip={item.title}
             render={<Link href={item.url} />}
+            className={cn(
+              "data-active:border-l-2 data-active:border-brand-gold data-active:pl-1.5",
+              "group-data-[collapsible=icon]:data-active:border-l-0 group-data-[collapsible=icon]:data-active:pl-2"
+            )}
           >
             <item.icon />
             <span>{item.title}</span>
@@ -54,13 +62,15 @@ export function AppSidebar({
       )
     })
 
+  const footerItems = orgNav.filter(canShow)
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" render={<Link href="/dashboard" />}>
-              <div className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5">
+              <div className="ring-brand-gold/40 flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white shadow-xs ring-1">
                 <Image src="/logo-icon.png" alt="" width={32} height={28} className="size-6 object-contain" />
               </div>
               <div className="flex flex-col gap-0.5 leading-none">
@@ -88,14 +98,34 @@ export function AppSidebar({
             </SidebarGroupContent>
           </SidebarGroup>
         )}
-        <SidebarGroup>
-          <SidebarGroupLabel>Organization</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>{renderItems(orgNav)}</SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter />
+      <SidebarFooter>
+        <div className="flex items-center justify-center gap-1 border-t border-sidebar-border pt-2">
+          {footerItems.map((item) => {
+            const isActive = isActivePath(item.url)
+            return (
+              <Tooltip key={item.url}>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                        "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground ring-brand-gold/50 ring-1"
+                      )}
+                      render={<Link href={item.url} />}
+                    />
+                  }
+                >
+                  <item.icon />
+                </TooltipTrigger>
+                <TooltipContent side="top">{item.title}</TooltipContent>
+              </Tooltip>
+            )
+          })}
+        </div>
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   )

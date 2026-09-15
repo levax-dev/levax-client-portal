@@ -30,7 +30,7 @@ export function NotificationBell({ notifications }: { notifications: AppNotifica
       >
         <Bell />
         {unreadCount > 0 && (
-          <Badge className="absolute -top-1 -right-1 h-4 min-w-4 justify-center rounded-full px-1 text-[10px]">
+          <Badge className="bg-brand-gold absolute -top-1 -right-1 h-4 min-w-4 justify-center rounded-full px-1 text-[10px] text-black">
             {unreadCount > 9 ? "9+" : unreadCount}
           </Badge>
         )}
@@ -70,7 +70,7 @@ export function NotificationBell({ notifications }: { notifications: AppNotifica
                   )}
                 >
                   <span className="flex items-center gap-2 font-medium">
-                    {!n.is_read && <span className="size-1.5 rounded-full bg-primary" />}
+                    {!n.is_read && <span className="bg-brand-gold size-1.5 shrink-0 rounded-full" />}
                     {n.title}
                   </span>
                   {n.body && <span className="text-muted-foreground">{n.body}</span>}

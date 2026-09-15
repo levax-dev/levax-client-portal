@@ -2,6 +2,8 @@ import Image from "next/image"
 import Link from "next/link"
 import { Book, KanbanSquare, Ticket } from "lucide-react"
 
+import { NeuralNetworkBackground } from "@/components/neural-network-background"
+
 const features = [
   { icon: Ticket, label: "Support tickets", detail: "Raised, tracked, and resolved in one thread" },
   { icon: KanbanSquare, label: "Project boards", detail: "Drag-and-drop Kanban for every engagement" },
@@ -12,27 +14,27 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="relative hidden flex-col justify-between overflow-hidden bg-primary p-10 text-primary-foreground lg:flex">
-        {/* Animated aurora blobs */}
+        {/* Animated aurora blobs (color wash) */}
         <div
           aria-hidden
-          className="animate-aurora-1 absolute -top-24 -left-24 size-96 rounded-full bg-brand-gold/30 blur-3xl"
+          className="animate-aurora-1 absolute -top-24 -left-24 size-96 rounded-full bg-brand-gold/25 blur-3xl"
         />
         <div
           aria-hidden
-          className="animate-aurora-2 absolute top-1/3 -right-32 size-[28rem] rounded-full bg-white/15 blur-3xl"
+          className="animate-aurora-2 absolute top-1/3 -right-32 size-[28rem] rounded-full bg-white/10 blur-3xl"
         />
         <div
           aria-hidden
-          className="animate-aurora-3 absolute -bottom-32 left-1/4 size-96 rounded-full bg-brand-gold/20 blur-3xl"
+          className="animate-aurora-3 absolute -bottom-32 left-1/4 size-96 rounded-full bg-brand-gold/15 blur-3xl"
         />
-        {/* Texture overlay */}
-        <div aria-hidden className="bg-dot-grid absolute inset-0 opacity-[0.15]" />
+        {/* Neural network graph texture */}
+        <NeuralNetworkBackground className="absolute inset-0" />
 
         <Link
           href="/"
           className="animate-in fade-in slide-in-from-top-2 relative z-10 flex items-center gap-2.5 text-lg font-semibold tracking-tight duration-700"
         >
-          <span className="flex size-8 items-center justify-center rounded-lg bg-white shadow-xs">
+          <span className="ring-brand-gold/40 flex size-8 items-center justify-center rounded-lg bg-white shadow-xs ring-1">
             <Image src="/logo-icon.png" alt="" width={32} height={28} className="size-6 object-contain" />
           </span>
           Levax Client Portal
@@ -46,8 +48,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                 className="animate-in fade-in slide-in-from-bottom-2 flex items-start gap-3 fill-mode-both duration-700"
                 style={{ animationDelay: `${150 + i * 120}ms` }}
               >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/15">
-                  <feature.icon className="size-4.5" />
+                <span className="ring-brand-gold/25 flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/10 ring-1">
+                  <feature.icon className="text-brand-gold size-4.5" />
                 </span>
                 <div>
                   <p className="text-sm font-medium">{feature.label}</p>

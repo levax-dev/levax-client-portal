@@ -3,6 +3,7 @@ import Link from "next/link"
 import { ArrowLeft, LayoutDashboard } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { NeuralNetworkBackground } from "@/components/neural-network-background"
 
 export default function NotFound() {
   return (
@@ -15,7 +16,7 @@ export default function NotFound() {
         aria-hidden
         className="animate-aurora-2 absolute top-1/3 -right-32 size-[28rem] rounded-full bg-white/15 blur-3xl"
       />
-      <div aria-hidden className="bg-dot-grid absolute inset-0 opacity-[0.15]" />
+      <NeuralNetworkBackground className="absolute inset-0" />
 
       <div className="animate-in fade-in slide-in-from-bottom-2 relative z-10 flex max-w-md flex-col items-center gap-6 text-center duration-700">
         <span className="flex size-14 items-center justify-center rounded-2xl bg-white shadow-lg">

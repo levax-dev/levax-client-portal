@@ -48,6 +48,7 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
   --color-brand-gold: var(--brand-gold);
+  --color-brand-gold-ink: var(--brand-gold-ink);
   --color-brand-blue: var(--brand-blue);
 }
 
@@ -83,6 +84,7 @@
   --radius: 0.625rem;
   --brand-blue: oklch(0.42 0.167 269);
   --brand-gold: oklch(0.826 0.153 83.6);
+  --brand-gold-ink: oklch(0.52 0.13 75);
   --sidebar: oklch(0.985 0.003 269);
   --sidebar-foreground: oklch(0.21 0.02 269);
   --sidebar-primary: oklch(0.42 0.167 269);
@@ -119,6 +121,7 @@
   --chart-5: oklch(0.68 0.2 25);
   --brand-blue: oklch(0.64 0.15 269);
   --brand-gold: oklch(0.82 0.15 85);
+  --brand-gold-ink: oklch(0.82 0.15 85);
   --sidebar: oklch(0.21 0.022 269);
   --sidebar-foreground: oklch(0.96 0.005 269);
   --sidebar-primary: oklch(0.64 0.15 269);

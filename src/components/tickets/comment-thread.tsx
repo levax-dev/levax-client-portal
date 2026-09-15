@@ -51,7 +51,7 @@ export function CommentThread({
             key={comment.id}
             className={cn(
               "flex gap-3 rounded-lg p-3",
-              comment.is_internal && "border border-dashed border-amber-500/40 bg-amber-500/5"
+              comment.is_internal && "border-brand-gold/40 bg-brand-gold/5 border border-dashed"
             )}
           >
             <Avatar className="size-8 shrink-0">
@@ -69,7 +69,7 @@ export function CommentThread({
                   {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                 </span>
                 {comment.is_internal && (
-                  <span className="flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+                  <span className="text-brand-gold-ink flex items-center gap-1 text-xs font-medium">
                     <Lock className="size-3" />
                     Internal note
                   </span>
