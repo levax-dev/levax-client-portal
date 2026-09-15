@@ -32,7 +32,13 @@ export async function updateOwnProfile(_prev: ActionState, formData: FormData): 
   const supabase = await createClient()
   const { error } = await supabase
     .from("profiles")
-    .update({ full_name: parsed.data.fullName })
+    .update({
+      full_name: parsed.data.fullName,
+      phone: parsed.data.phone || null,
+      job_title: parsed.data.jobTitle || null,
+      location: parsed.data.location || null,
+      bio: parsed.data.bio || null,
+    })
     .eq("id", user.id)
   if (error) return { error: error.message }
 

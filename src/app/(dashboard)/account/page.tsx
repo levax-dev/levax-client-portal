@@ -22,7 +22,14 @@ export default async function AccountPage() {
           <CardTitle className="text-base">Your profile</CardTitle>
         </CardHeader>
         <CardContent>
-          <ProfileForm fullName={user.profile.full_name ?? ""} email={user.email} />
+          <ProfileForm
+            fullName={user.profile.full_name ?? ""}
+            email={user.email}
+            phone={user.profile.phone ?? ""}
+            jobTitle={user.profile.job_title ?? ""}
+            location={user.profile.location ?? ""}
+            bio={user.profile.bio ?? ""}
+          />
         </CardContent>
       </Card>
 
