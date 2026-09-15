@@ -1,5 +1,6 @@
 import "server-only"
 
+import { cache } from "react"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
@@ -16,8 +17,13 @@ export interface CurrentUser {
   memberships: { org: Organization; role: OrgRole }[]
 }
 
-/** Loads the signed-in user's profile and org memberships. Redirects to /login if unauthenticated. */
-export async function requireUser(): Promise<CurrentUser> {
+/**
+ * Loads the signed-in user's profile and org memberships. Redirects to
+ * /login if unauthenticated. Wrapped in React's `cache()` so the layout and
+ * every page that calls this within the same request share one result
+ * instead of each re-running the auth check and two queries from scratch.
+ */
+export const requireUser = cache(async (): Promise<CurrentUser> => {
   const supabase = await createClient()
   const {
     data: { user },
@@ -48,14 +54,15 @@ export async function requireUser(): Promise<CurrentUser> {
     }))
 
   return { id: user.id, email: user.email ?? profile.email, profile, isStaff, memberships }
-}
+})
 
 /**
  * Resolves which organization the current request should be scoped to.
  * Client users are scoped to their (usually only) org; staff pick one via
  * the org switcher, persisted in a cookie, defaulting to the first org.
+ * Also request-memoized — layout and page both call this.
  */
-export async function getActiveOrg(current: CurrentUser): Promise<Organization | null> {
+export const getActiveOrg = cache(async (current: CurrentUser): Promise<Organization | null> => {
   if (!current.isStaff) {
     return current.memberships[0]?.org ?? null
   }
@@ -82,7 +89,7 @@ export async function getActiveOrg(current: CurrentUser): Promise<Organization |
     .maybeSingle()
 
   return firstOrg ?? null
-}
+})
 
 export async function requireOrgAdmin(current: CurrentUser, orgId: string) {
   if (current.isStaff) return
