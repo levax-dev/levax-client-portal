@@ -32,21 +32,15 @@ export const requireUser = cache(async (): Promise<CurrentUser> => {
 
   if (!user) redirect("/login")
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single()
+  const [{ data: profile }, { data: memberRows }] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", user.id).single(),
+    supabase.from("org_members").select("role, organizations(*)").eq("user_id", user.id),
+  ])
 
   if (!profile) redirect("/login")
 
   const isSuperAdmin = profile.platform_role === "super_admin"
   const isStaff = isSuperAdmin || profile.platform_role === "staff"
-
-  const { data: memberRows } = await supabase
-    .from("org_members")
-    .select("role, organizations(*)")
-    .eq("user_id", user.id)
 
   const memberships = (memberRows ?? [])
     .filter((row) => row.organizations)

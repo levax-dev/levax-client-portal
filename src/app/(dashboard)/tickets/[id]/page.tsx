@@ -1,10 +1,12 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 import { notFound } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
 
-import { AttachmentsPanel } from "@/components/tickets/attachments-panel"
-import { CommentThread, type Comment } from "@/components/tickets/comment-thread"
-import { IssueSidebar } from "@/components/tickets/issue-sidebar"
+import { AttachmentsSection } from "@/components/tickets/attachments-section"
+import { CommentsSection } from "@/components/tickets/comments-section"
+import { IssueSidebarSection } from "@/components/tickets/issue-sidebar-section"
+import { AttachmentsSkeleton, CommentsSkeleton, IssueSidebarSkeleton } from "@/components/tickets/ticket-skeletons"
 import { PriorityBadge } from "@/components/priority-badge"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -36,32 +38,6 @@ export default async function TicketDetailPage({
 
   if (!issue) notFound()
 
-  const [{ data: comments }, { data: attachments }, { data: columns }, { data: assignableUsers }, { data: linkableProjects }] =
-    await Promise.all([
-      supabase
-        .from("issue_comments")
-        .select("id, body, is_internal, created_at, author:profiles(id, full_name, avatar_url)")
-        .eq("issue_id", id)
-        .order("created_at", { ascending: true }),
-      supabase.from("attachments").select("*").eq("issue_id", id).order("created_at"),
-      supabase
-        .from("board_columns")
-        .select("id, name, color")
-        .eq("project_id", issue.project_id)
-        .order("position"),
-      supabase
-        .from("org_members")
-        .select("profiles(id, full_name, avatar_url)")
-        .eq("org_id", issue.org_id),
-      supabase
-        .from("projects")
-        .select("id, name")
-        .eq("org_id", issue.org_id)
-        .eq("is_support_project", false)
-        .eq("status", "active")
-        .order("name"),
-    ])
-
   const column = issue.board_columns as unknown as {
     id: string
     name: string
@@ -71,17 +47,6 @@ export default async function TicketDetailPage({
   const reporter = issue.reporter as unknown as { id: string; full_name: string | null; avatar_url: string | null } | null
   const assignee = issue.assignee as unknown as { id: string; full_name: string | null; avatar_url: string | null } | null
   const linkedProject = issue.linked_project as unknown as { id: string; name: string } | null
-
-  const assignees = (assignableUsers ?? [])
-    .map((row) => row.profiles as unknown as { id: string; full_name: string | null } | null)
-    .filter((p): p is { id: string; full_name: string | null } => !!p)
-
-  const attachmentsWithUrls = await Promise.all(
-    (attachments ?? []).map(async (a) => {
-      const { data } = await supabase.storage.from("attachments").createSignedUrl(a.file_path, 60 * 30)
-      return { ...a, url: data?.signedUrl ?? null }
-    })
-  )
 
   return (
     <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[1fr_300px]">
@@ -111,32 +76,32 @@ export default async function TicketDetailPage({
           )}
         </div>
 
-        <AttachmentsPanel issueId={issue.id} orgId={issue.org_id} attachments={attachmentsWithUrls} />
+        <Suspense fallback={<AttachmentsSkeleton />}>
+          <AttachmentsSection issueId={issue.id} orgId={issue.org_id} />
+        </Suspense>
 
         <Separator />
 
-        <CommentThread
-          issueId={issue.id}
-          comments={(comments ?? []) as unknown as Comment[]}
-          currentUserId={user.id}
-          isStaff={user.isStaff}
-        />
+        <Suspense fallback={<CommentsSkeleton />}>
+          <CommentsSection issueId={issue.id} currentUserId={user.id} isStaff={user.isStaff} />
+        </Suspense>
       </div>
 
-      <IssueSidebar
-        issueId={issue.id}
-        columns={columns ?? []}
-        currentColumnId={column?.id ?? ""}
-        priority={issue.priority}
-        assignee={assignee}
-        reporter={reporter}
-        dueDate={issue.due_date}
-        assignableUsers={assignees}
-        canEdit={user.isStaff}
-        showLinkedProject={user.isStaff && issue.type === "ticket"}
-        linkedProject={linkedProject}
-        linkableProjects={linkableProjects ?? []}
-      />
+      <Suspense fallback={<IssueSidebarSkeleton />}>
+        <IssueSidebarSection
+          issueId={issue.id}
+          projectId={issue.project_id}
+          orgId={issue.org_id}
+          currentColumnId={column?.id ?? ""}
+          priority={issue.priority}
+          assignee={assignee}
+          reporter={reporter}
+          dueDate={issue.due_date}
+          canEdit={user.isStaff}
+          showLinkedProject={user.isStaff && issue.type === "ticket"}
+          linkedProject={linkedProject}
+        />
+      </Suspense>
     </div>
   )
 }

@@ -1,24 +1,18 @@
+import { Suspense } from "react"
+import { Bell } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/layout/app-sidebar"
-import { NotificationBell } from "@/components/layout/notification-bell"
+import { NotificationBellSection } from "@/components/layout/notification-bell-section"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserMenu } from "@/components/layout/user-menu"
 import { getActiveOrg, requireUser } from "@/lib/auth"
-import { createClient } from "@/lib/supabase/server"
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser()
   const activeOrg = await getActiveOrg(user)
-
-  const supabase = await createClient()
-
-  const { data: notifications } = await supabase
-    .from("notifications")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(20)
 
   const isOrgAdmin = user.memberships.some(
     (m) => m.org.id === activeOrg?.id && m.role === "admin"
@@ -33,7 +27,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <Separator orientation="vertical" className="mr-2 h-4" />
           <div className="flex-1" />
           <div className="flex items-center gap-1">
-            <NotificationBell notifications={notifications ?? []} />
+            <Suspense fallback={<Button variant="ghost" size="icon" disabled aria-label="Notifications"><Bell /></Button>}>
+              <NotificationBellSection />
+            </Suspense>
             <ThemeToggle />
             <UserMenu
               name={user.profile.full_name ?? user.email}
