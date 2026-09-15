@@ -36,7 +36,7 @@ export function NewCategoryForm() {
         )}
         <Field>
           <FieldLabel htmlFor="cat-name">New category</FieldLabel>
-          <Input id="cat-name" name="name" placeholder="Getting started" required maxLength={120} />
+          <Input id="cat-name" name="name" placeholder="Eg. Getting started" required maxLength={120} />
         </Field>
         <SubmitButton variant="outline" size="sm" pendingText="Adding…">
           Add category

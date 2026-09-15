@@ -25,14 +25,14 @@ export function NewTicketForm() {
         )}
         <Field>
           <FieldLabel htmlFor="title">Subject</FieldLabel>
-          <Input id="title" name="title" placeholder="Can't log in to the dashboard" required maxLength={200} />
+          <Input id="title" name="title" placeholder="Eg. Can't log in to the dashboard" required maxLength={200} />
         </Field>
         <Field>
           <FieldLabel htmlFor="description">Details</FieldLabel>
           <Textarea
             id="description"
             name="description"
-            placeholder="Steps to reproduce, error messages, what you expected to happen…"
+            placeholder="Eg. I get a 500 error when clicking Save. Expected it to update the record."
             rows={6}
           />
           <FieldDescription>You can attach files after the ticket is created.</FieldDescription>

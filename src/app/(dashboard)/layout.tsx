@@ -2,7 +2,6 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/layout/app-sidebar"
 import { NotificationBell } from "@/components/layout/notification-bell"
-import { OrgSwitcher } from "@/components/layout/org-switcher"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserMenu } from "@/components/layout/user-menu"
 import { getActiveOrg, requireUser } from "@/lib/auth"
@@ -14,15 +13,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const supabase = await createClient()
 
-  const [{ data: notifications }, { data: organizations }] = await Promise.all([
-    supabase
-      .from("notifications")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(20),
-    supabase.from("organizations").select("id, name").order("name"),
-  ])
+  const { data: notifications } = await supabase
+    .from("notifications")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(20)
 
   const isOrgAdmin = user.memberships.some(
     (m) => m.org.id === activeOrg?.id && m.role === "admin"
@@ -35,11 +31,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
-          <div className="flex flex-1 items-center gap-3">
-            {user.isStaff && organizations && (
-              <OrgSwitcher organizations={organizations} activeOrgId={activeOrg?.id ?? null} />
-            )}
-          </div>
+          <div className="flex-1" />
           <div className="flex items-center gap-1">
             <NotificationBell notifications={notifications ?? []} />
             <ThemeToggle />

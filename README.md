@@ -1,4 +1,4 @@
-# Levax Client Portal
+# Leverage Axiom Client Portal
 
 A multi-tenant client portal for Leverage Axiom: support tickets, Jira-style project boards, a
 knowledge base, and team/account management — one login per client organization.
@@ -85,10 +85,11 @@ npm run dev
 
 ## Customizing the look
 
-The color palette is a placeholder (indigo/slate, light + dark) defined as CSS custom properties in
-`src/app/globals.css` (`:root` and `.dark` blocks) — swap in real brand colors any time. Replace the
-`Layers` icon and "Levax Portal" text in `src/components/layout/app-sidebar.tsx` with a logo when
-you have one.
+The color palette (brand blue + gold, light + dark) is defined as CSS custom properties in
+`src/app/globals.css` (`:root` and `.dark` blocks, plus `--brand-blue`/`--brand-gold`/`--brand-gold-ink`).
+The logo lives at `public/logo-icon.png` (mark only) and `public/logo-full.png` (full lockup) —
+replace those and the sidebar/login-page references in `src/components/layout/app-sidebar.tsx` and
+`src/app/(auth)/layout.tsx` if the brand changes.
 
 ## What's not built yet
 

@@ -186,6 +186,15 @@ export async function setIssueDueDate(id: string, dueDate: string | null) {
   revalidatePath(`/tickets/${id}`)
 }
 
+/** Staff-only: associate a ticket with a broader project for context, without moving it off the support board. */
+export async function setIssueLinkedProject(id: string, projectId: string | null) {
+  const user = await requireUser()
+  if (!user.isStaff) return
+  const supabase = await createClient()
+  await supabase.from("issues").update({ linked_project_id: projectId }).eq("id", id)
+  revalidatePath(`/tickets/${id}`)
+}
+
 export async function addComment(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const raw = {
     ...Object.fromEntries(formData),

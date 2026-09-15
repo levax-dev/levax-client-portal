@@ -25,17 +25,18 @@ export default async function TicketDetailPage({
   const { data: issue } = await supabase
     .from("issues")
     .select(
-      `id, title, description, priority, created_at, due_date, org_id, project_id,
+      `id, title, description, priority, type, created_at, due_date, org_id, project_id, linked_project_id,
        board_columns(id, name, color, is_done_column, project_id),
        reporter:profiles!issues_reporter_id_fkey(id, full_name, avatar_url, email),
-       assignee:profiles!issues_assignee_id_fkey(id, full_name, avatar_url, email)`
+       assignee:profiles!issues_assignee_id_fkey(id, full_name, avatar_url, email),
+       linked_project:projects!issues_linked_project_id_fkey(id, name)`
     )
     .eq("id", id)
     .maybeSingle()
 
   if (!issue) notFound()
 
-  const [{ data: comments }, { data: attachments }, { data: columns }, { data: assignableUsers }] =
+  const [{ data: comments }, { data: attachments }, { data: columns }, { data: assignableUsers }, { data: linkableProjects }] =
     await Promise.all([
       supabase
         .from("issue_comments")
@@ -52,6 +53,13 @@ export default async function TicketDetailPage({
         .from("org_members")
         .select("profiles(id, full_name, avatar_url)")
         .eq("org_id", issue.org_id),
+      supabase
+        .from("projects")
+        .select("id, name")
+        .eq("org_id", issue.org_id)
+        .eq("is_support_project", false)
+        .eq("status", "active")
+        .order("name"),
     ])
 
   const column = issue.board_columns as unknown as {
@@ -62,6 +70,7 @@ export default async function TicketDetailPage({
   } | null
   const reporter = issue.reporter as unknown as { id: string; full_name: string | null; avatar_url: string | null } | null
   const assignee = issue.assignee as unknown as { id: string; full_name: string | null; avatar_url: string | null } | null
+  const linkedProject = issue.linked_project as unknown as { id: string; name: string } | null
 
   const assignees = (assignableUsers ?? [])
     .map((row) => row.profiles as unknown as { id: string; full_name: string | null } | null)
@@ -124,6 +133,9 @@ export default async function TicketDetailPage({
         dueDate={issue.due_date}
         assignableUsers={assignees}
         canEdit={user.isStaff}
+        showLinkedProject={user.isStaff && issue.type === "ticket"}
+        linkedProject={linkedProject}
+        linkableProjects={linkableProjects ?? []}
       />
     </div>
   )

@@ -1,9 +1,16 @@
 "use client"
 
 import { useTransition } from "react"
-import { CalendarDays, User as UserIcon } from "lucide-react"
+import Link from "next/link"
+import { CalendarDays, KanbanSquare, User as UserIcon } from "lucide-react"
 
-import { setIssueAssignee, setIssueColumn, setIssueDueDate, setIssuePriority } from "@/app/actions/issues"
+import {
+  setIssueAssignee,
+  setIssueColumn,
+  setIssueDueDate,
+  setIssueLinkedProject,
+  setIssuePriority,
+} from "@/app/actions/issues"
 import { PriorityBadge } from "@/components/priority-badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -32,6 +39,9 @@ export function IssueSidebar({
   dueDate,
   assignableUsers,
   canEdit,
+  showLinkedProject = false,
+  linkedProject = null,
+  linkableProjects = [],
 }: {
   issueId: string
   columns: { id: string; name: string; color: string }[]
@@ -42,6 +52,9 @@ export function IssueSidebar({
   dueDate: string | null
   assignableUsers: Person[]
   canEdit: boolean
+  showLinkedProject?: boolean
+  linkedProject?: { id: string; name: string } | null
+  linkableProjects?: { id: string; name: string }[]
 }) {
   const [isPending, startTransition] = useTransition()
 
@@ -178,6 +191,44 @@ export function IssueSidebar({
           )}
         </CardContent>
       </Card>
+
+      {showLinkedProject && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Linked project</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Select
+              defaultValue={linkedProject?.id ?? "none"}
+              disabled={isPending}
+              onValueChange={(value) =>
+                startTransition(() => setIssueLinkedProject(issueId, value === "none" ? null : value))
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Eg. Purchase Management System" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Not linked</SelectItem>
+                {linkableProjects.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {linkedProject && (
+              <Link
+                href={`/projects/${linkedProject.id}`}
+                className="flex items-center gap-1.5 text-sm text-primary hover:underline"
+              >
+                <KanbanSquare className="size-3.5" />
+                View board
+              </Link>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

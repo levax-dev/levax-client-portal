@@ -428,11 +428,11 @@ async function main() {
       slug: "getting-started",
       articles: [
         {
-          title: "Welcome to the Levax Client Portal",
+          title: "Welcome to the Leverage Axiom Client Portal",
           slug: "welcome-to-levax",
           excerpt: "A quick tour of what you can do here.",
           content:
-            "# Welcome\n\nThe Levax Client Portal is where you raise support tickets, track project work on a Kanban board, and find answers in our knowledge base — all in one place.\n\n## What you can do\n\n- **Raise tickets** for anything you need help with\n- **Track projects** on a visual board\n- **Invite your team** so everyone stays in the loop\n- **Search this knowledge base** before opening a ticket — you might find your answer already here\n\nIf you get stuck, just raise a ticket and we'll take it from there.",
+            "# Welcome\n\nThe Leverage Axiom Client Portal is where you raise support tickets, track project work on a Kanban board, and find answers in our knowledge base — all in one place.\n\n## What you can do\n\n- **Raise tickets** for anything you need help with\n- **Track projects** on a visual board\n- **Invite your team** so everyone stays in the loop\n- **Search this knowledge base** before opening a ticket — you might find your answer already here\n\nIf you get stuck, just raise a ticket and we'll take it from there.",
         },
         {
           title: "Signing in for the first time",

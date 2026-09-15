@@ -83,6 +83,7 @@ export type Issue = {
   priority: IssuePriority
   reporter_id: string | null
   assignee_id: string | null
+  linked_project_id: string | null
   position: number
   due_date: string | null
   resolved_at: string | null

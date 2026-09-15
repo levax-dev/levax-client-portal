@@ -37,7 +37,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <span className="ring-brand-gold/40 flex size-8 items-center justify-center rounded-lg bg-white shadow-xs ring-1">
             <Image src="/logo-icon.png" alt="" width={32} height={28} className="size-6 object-contain" />
           </span>
-          Levax Client Portal
+          Leverage Axiom Client Portal
         </Link>
 
         <div className="relative z-10 space-y-10">

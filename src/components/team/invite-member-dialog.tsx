@@ -49,7 +49,7 @@ export function InviteMemberDialog({ orgId }: { orgId?: string } = {}) {
             )}
             <Field>
               <FieldLabel htmlFor="invite-email">Email</FieldLabel>
-              <Input id="invite-email" name="email" type="email" required placeholder="jane@client.com" />
+              <Input id="invite-email" name="email" type="email" required placeholder="Eg. jane@client.com" />
             </Field>
             <Field>
               <FieldLabel htmlFor="invite-role">Role</FieldLabel>

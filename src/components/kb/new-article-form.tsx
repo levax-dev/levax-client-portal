@@ -47,7 +47,7 @@ export function NewArticleForm({ categories }: { categories: KbCategory[] }) {
         </Field>
         <Field>
           <FieldLabel htmlFor="excerpt">Excerpt</FieldLabel>
-          <Textarea id="excerpt" name="excerpt" rows={2} placeholder="One-sentence summary shown in search results" />
+          <Textarea id="excerpt" name="excerpt" rows={2} placeholder="Eg. Learn how to raise and track a support ticket." />
         </Field>
         <Field>
           <FieldLabel htmlFor="content">Content</FieldLabel>

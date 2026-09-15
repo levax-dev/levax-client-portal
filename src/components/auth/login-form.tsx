@@ -22,7 +22,7 @@ export function LoginForm() {
     <div className="space-y-6">
       <div className="space-y-1.5">
         <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
-        <p className="text-sm text-muted-foreground">Sign in to your Levax client portal account.</p>
+        <p className="text-sm text-muted-foreground">Sign in to your Leverage Axiom client portal account.</p>
       </div>
 
       <Tabs defaultValue="password">
@@ -42,7 +42,7 @@ export function LoginForm() {
               )}
               <Field>
                 <FieldLabel htmlFor="email">Email</FieldLabel>
-                <Input id="email" name="email" type="email" placeholder="you@company.com" required autoComplete="email" />
+                <Input id="email" name="email" type="email" placeholder="Eg. you@company.com" required autoComplete="email" />
               </Field>
               <Field>
                 <div className="flex items-center justify-between">
@@ -75,7 +75,7 @@ export function LoginForm() {
               )}
               <Field>
                 <FieldLabel htmlFor="magic-email">Email</FieldLabel>
-                <Input id="magic-email" name="email" type="email" placeholder="you@company.com" required autoComplete="email" />
+                <Input id="magic-email" name="email" type="email" placeholder="Eg. you@company.com" required autoComplete="email" />
                 <FieldDescription>We&apos;ll email you a one-time sign-in link.</FieldDescription>
               </Field>
               <SubmitButton className="w-full" pendingText="Sending…">

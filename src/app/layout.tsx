@@ -18,8 +18,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Levax Client Portal",
-    template: "%s · Levax Client Portal",
+    default: "Leverage Axiom Client Portal",
+    template: "%s · Leverage Axiom Client Portal",
   },
   description: "Support tickets, project tracking, and knowledge base for Leverage Axiom clients.",
 };

@@ -31,7 +31,7 @@ export default async function AcceptInvitePage({
       <div className="w-full max-w-sm space-y-6">
         <div className="space-y-1.5 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">
-            Join {org?.name ?? "your team"} on Levax
+            Join {org?.name ?? "your team"} on Leverage Axiom
           </h1>
           <p className="text-sm text-muted-foreground">
             You&apos;ve been invited as a {invite.role}. Set a password to finish creating your account.
@@ -42,7 +42,7 @@ export default async function AcceptInvitePage({
           <AcceptInviteForm token={token} email={invite.email} />
         ) : (
           <p className="text-center text-sm text-muted-foreground">
-            This invite link is no longer valid. Ask your Levax contact to resend it, or{" "}
+            This invite link is no longer valid. Ask your Leverage Axiom contact to resend it, or{" "}
             <Link href="/login" className="text-primary hover:underline">
               sign in
             </Link>{" "}

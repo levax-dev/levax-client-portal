@@ -3,6 +3,7 @@ import Link from "next/link"
 import { KanbanSquare, Plus } from "lucide-react"
 
 import { EmptyState } from "@/components/empty-state"
+import { OrgSwitcher } from "@/components/layout/org-switcher"
 import { PageHeader } from "@/components/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -12,10 +13,28 @@ import { createClient } from "@/lib/supabase/server"
 
 export const metadata: Metadata = { title: "Projects" }
 
-export default async function ProjectsPage() {
+export default async function ProjectsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ org?: string }>
+}) {
+  const { org: orgParam } = await searchParams
   const user = await requireUser()
-  const org = await getActiveOrg(user)
   const supabase = await createClient()
+
+  let org = await getActiveOrg(user)
+  let organizations: { id: string; name: string }[] | null = null
+
+  if (user.isStaff) {
+    const [{ data: allOrgs }, { data: paramOrg }] = await Promise.all([
+      supabase.from("organizations").select("id, name").order("name"),
+      orgParam
+        ? supabase.from("organizations").select("*").eq("id", orgParam).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ])
+    organizations = allOrgs
+    if (paramOrg) org = paramOrg
+  }
 
   const { data: projects } = org
     ? await supabase
@@ -43,6 +62,10 @@ export default async function ProjectsPage() {
           )
         }
       />
+
+      {user.isStaff && organizations && (
+        <OrgSwitcher organizations={organizations} activeOrgId={org?.id ?? null} />
+      )}
 
       {!projects || projects.length === 0 ? (
         <EmptyState

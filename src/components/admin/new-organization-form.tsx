@@ -23,11 +23,11 @@ export function NewOrganizationForm() {
         )}
         <Field>
           <FieldLabel htmlFor="name">Organization name</FieldLabel>
-          <Input id="name" name="name" placeholder="Acme Inc." required maxLength={120} />
+          <Input id="name" name="name" placeholder="Eg. Acme Inc." required maxLength={120} />
         </Field>
         <Field>
           <FieldLabel htmlFor="adminEmail">Primary contact email</FieldLabel>
-          <Input id="adminEmail" name="adminEmail" type="email" placeholder="admin@acme.com" required />
+          <Input id="adminEmail" name="adminEmail" type="email" placeholder="Eg. admin@acme.com" required />
           <FieldDescription>
             They&apos;ll get an email invite to set up their account as an org admin.
           </FieldDescription>

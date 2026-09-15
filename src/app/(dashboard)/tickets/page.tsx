@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { Plus } from "lucide-react"
 
+import { OrgSwitcher } from "@/components/layout/org-switcher"
 import { PageHeader } from "@/components/page-header"
 import { TicketsTable, type TicketRow } from "@/components/tickets/tickets-table"
 import { Button } from "@/components/ui/button"
@@ -10,10 +11,28 @@ import { createClient } from "@/lib/supabase/server"
 
 export const metadata: Metadata = { title: "Tickets" }
 
-export default async function TicketsPage() {
+export default async function TicketsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ org?: string }>
+}) {
+  const { org: orgParam } = await searchParams
   const user = await requireUser()
-  const org = await getActiveOrg(user)
   const supabase = await createClient()
+
+  let org = await getActiveOrg(user)
+  let organizations: { id: string; name: string }[] | null = null
+
+  if (user.isStaff) {
+    const [{ data: allOrgs }, { data: paramOrg }] = await Promise.all([
+      supabase.from("organizations").select("id, name").order("name"),
+      orgParam
+        ? supabase.from("organizations").select("*").eq("id", orgParam).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ])
+    organizations = allOrgs
+    if (paramOrg) org = paramOrg
+  }
 
   const { data } = org
     ? await supabase
@@ -39,7 +58,11 @@ export default async function TicketsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Tickets"
-        description="Support requests raised by your organization."
+        description={
+          user.isStaff
+            ? `Support requests for ${org?.name ?? "the selected organization"}.`
+            : "Support requests raised by your organization."
+        }
         actions={
           <Button render={<Link href="/tickets/new" />}>
             <Plus />
@@ -47,6 +70,9 @@ export default async function TicketsPage() {
           </Button>
         }
       />
+      {user.isStaff && organizations && (
+        <OrgSwitcher organizations={organizations} activeOrgId={org?.id ?? null} />
+      )}
       <TicketsTable tickets={tickets} />
     </div>
   )

@@ -34,7 +34,7 @@ export function AcceptInviteForm({ token, email }: { token: string; email: strin
         </Field>
         <Field>
           <FieldLabel htmlFor="fullName">Your name</FieldLabel>
-          <Input id="fullName" name="fullName" placeholder="Jane Doe" required autoComplete="name" />
+          <Input id="fullName" name="fullName" placeholder="Eg. Jane Doe" required autoComplete="name" />
         </Field>
         <Field>
           <FieldLabel htmlFor="password">Create a password</FieldLabel>

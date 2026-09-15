@@ -74,7 +74,7 @@ export function AppSidebar({
                 <Image src="/logo-icon.png" alt="" width={32} height={28} className="size-6 object-contain" />
               </div>
               <div className="flex flex-col gap-0.5 leading-none">
-                <span className="font-semibold">Levax Portal</span>
+                <span className="font-semibold">Leverage Axiom</span>
                 <span className={cn("text-xs text-muted-foreground", !orgName && "invisible")}>
                   {orgName ?? "—"}
                 </span>

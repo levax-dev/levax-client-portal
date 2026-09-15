@@ -35,7 +35,7 @@ export function ForgotPasswordForm() {
           )}
           <Field>
             <FieldLabel htmlFor="email">Email</FieldLabel>
-            <Input id="email" name="email" type="email" placeholder="you@company.com" required autoComplete="email" />
+            <Input id="email" name="email" type="email" placeholder="Eg. you@company.com" required autoComplete="email" />
           </Field>
           <SubmitButton className="w-full" pendingText="Sending…">
             Send reset link

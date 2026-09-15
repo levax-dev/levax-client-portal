@@ -7,13 +7,14 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import type { OrgRole, Organization, Profile } from "@/types/database"
 
-export const ACTIVE_ORG_COOKIE = "levax_active_org"
+export const ACTIVE_ORG_COOKIE = "leverage_axiom_active_org"
 
 export interface CurrentUser {
   id: string
   email: string
   profile: Profile
   isStaff: boolean
+  isSuperAdmin: boolean
   memberships: { org: Organization; role: OrgRole }[]
 }
 
@@ -39,7 +40,8 @@ export const requireUser = cache(async (): Promise<CurrentUser> => {
 
   if (!profile) redirect("/login")
 
-  const isStaff = profile.platform_role === "staff" || profile.platform_role === "super_admin"
+  const isSuperAdmin = profile.platform_role === "super_admin"
+  const isStaff = isSuperAdmin || profile.platform_role === "staff"
 
   const { data: memberRows } = await supabase
     .from("org_members")
@@ -53,7 +55,7 @@ export const requireUser = cache(async (): Promise<CurrentUser> => {
       role: row.role as OrgRole,
     }))
 
-  return { id: user.id, email: user.email ?? profile.email, profile, isStaff, memberships }
+  return { id: user.id, email: user.email ?? profile.email, profile, isStaff, isSuperAdmin, memberships }
 })
 
 /**

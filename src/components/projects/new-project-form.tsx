@@ -24,11 +24,11 @@ export function NewProjectForm() {
         )}
         <Field>
           <FieldLabel htmlFor="name">Project name</FieldLabel>
-          <Input id="name" name="name" placeholder="Website redesign" required maxLength={120} />
+          <Input id="name" name="name" placeholder="Eg. Website redesign" required maxLength={120} />
         </Field>
         <Field>
           <FieldLabel htmlFor="description">Description</FieldLabel>
-          <Textarea id="description" name="description" rows={4} placeholder="What's this project about?" />
+          <Textarea id="description" name="description" rows={4} placeholder="Eg. Migrating our product catalog to the new platform." />
           <FieldDescription>
             You&apos;ll get a Kanban board with Backlog, To Do, In Progress, In Review, and Done columns.
           </FieldDescription>
