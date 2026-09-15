@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -37,7 +38,9 @@ export function NotificationBell({ notifications }: { notifications: AppNotifica
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between px-3 py-2">
-          <DropdownMenuLabel className="p-0">Notifications</DropdownMenuLabel>
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="p-0">Notifications</DropdownMenuLabel>
+          </DropdownMenuGroup>
           {unreadCount > 0 && (
             <Button
               variant="ghost"
