@@ -25,7 +25,7 @@ export async function TicketsListSection({ orgParam }: { orgParam?: string }) {
     ? await supabase
         .from("issues")
         .select(
-          "id, title, priority, created_at, reporter_id, board_columns(name, color), profiles!issues_assignee_id_fkey(id, full_name, avatar_url)"
+          "id, title, priority, created_at, reporter_id, project_id, department_id, departments(name), board_columns(name, color), profiles!issues_assignee_id_fkey(id, full_name, avatar_url)"
         )
         .eq("org_id", org.id)
         .eq("type", "ticket")
@@ -38,16 +38,23 @@ export async function TicketsListSection({ orgParam }: { orgParam?: string }) {
     priority: row.priority,
     created_at: row.created_at,
     reporterId: row.reporter_id,
+    projectId: row.project_id,
+    department: (row.departments as unknown as { name: string } | null)?.name ?? null,
     column: (row.board_columns as unknown as TicketRow["column"]) ?? null,
     assignee: (row.profiles as unknown as TicketRow["assignee"]) ?? null,
   }))
+
+  const { data: ledProjects } = org
+    ? await supabase.from("projects").select("id").eq("org_id", org.id).eq("lead_id", user.id)
+    : { data: [] }
+  const leadProjectIds = (ledProjects ?? []).map((p) => p.id)
 
   return (
     <div className="space-y-6">
       {user.isStaff && organizations && (
         <OrgSwitcher organizations={organizations} activeOrgId={org?.id ?? null} />
       )}
-      <TicketsTable tickets={tickets} currentUserId={user.id} />
+      <TicketsTable tickets={tickets} currentUserId={user.id} leadProjectIds={leadProjectIds} />
     </div>
   )
 }

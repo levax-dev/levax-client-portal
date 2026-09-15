@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
-import { getActiveOrg, requireUser } from "@/lib/auth"
+import { requireUser } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import type { Issue, IssuePriority } from "@/types/database"
 import {
@@ -16,24 +16,24 @@ import {
 
 export type ActionState = { error?: string; success?: string } | null
 
-/** Raises a new support ticket in the active org's default Support project. */
+/**
+ * Raises a new ticket into a project the reporter has access to. Priority
+ * isn't set by the client — it defaults to medium and is triaged by staff
+ * (typically the project lead) once the ticket comes in.
+ */
 export async function createTicket(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const parsed = createTicketSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" }
 
   const user = await requireUser()
-  const org = await getActiveOrg(user)
-  if (!org) return { error: "No organization selected." }
-
   const supabase = await createClient()
 
   const { data: project } = await supabase
     .from("projects")
-    .select("id")
-    .eq("org_id", org.id)
-    .eq("is_support_project", true)
-    .single()
-  if (!project) return { error: "Support project not found for this organization." }
+    .select("id, org_id")
+    .eq("id", parsed.data.projectId)
+    .maybeSingle()
+  if (!project) return { error: "That project could not be found." }
 
   const { data: column } = await supabase
     .from("board_columns")
@@ -42,18 +42,19 @@ export async function createTicket(_prev: ActionState, formData: FormData): Prom
     .order("position")
     .limit(1)
     .single()
-  if (!column) return { error: "Support board is not set up correctly." }
+  if (!column) return { error: "This project's board is not set up correctly." }
 
   const { data: issue, error } = await supabase
     .from("issues")
     .insert({
-      org_id: org.id,
+      org_id: project.org_id,
       project_id: project.id,
       column_id: column.id,
+      department_id: parsed.data.departmentId || null,
       type: "ticket",
       title: parsed.data.title,
       description: parsed.data.description,
-      priority: parsed.data.priority,
+      priority: "medium",
       reporter_id: user.id,
     })
     .select("id")
@@ -192,6 +193,14 @@ export async function setIssueLinkedProject(id: string, projectId: string | null
   if (!user.isStaff) return
   const supabase = await createClient()
   await supabase.from("issues").update({ linked_project_id: projectId }).eq("id", id)
+  revalidatePath(`/tickets/${id}`)
+}
+
+export async function setIssueDepartment(id: string, departmentId: string | null) {
+  const user = await requireUser()
+  if (!user.isStaff) return
+  const supabase = await createClient()
+  await supabase.from("issues").update({ department_id: departmentId }).eq("id", id)
   revalidatePath(`/tickets/${id}`)
 }
 

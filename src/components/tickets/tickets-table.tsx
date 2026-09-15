@@ -27,6 +27,8 @@ export interface TicketRow {
   priority: IssuePriority
   created_at: string
   reporterId: string | null
+  projectId: string
+  department: string | null
   column: { name: string; color: string } | null
   assignee: { id: string; full_name: string | null; avatar_url: string | null } | null
 }
@@ -45,9 +47,14 @@ function TicketFilterTable({
   const [query, setQuery] = useState("")
   const [priority, setPriority] = useState<string>("all")
   const [status, setStatus] = useState<string>("all")
+  const [department, setDepartment] = useState<string>("all")
 
   const statuses = useMemo(
     () => Array.from(new Set(tickets.map((t) => t.column?.name).filter(Boolean))) as string[],
+    [tickets]
+  )
+  const departments = useMemo(
+    () => Array.from(new Set(tickets.map((t) => t.department).filter(Boolean))) as string[],
     [tickets]
   )
 
@@ -55,6 +62,7 @@ function TicketFilterTable({
     if (query && !t.title.toLowerCase().includes(query.toLowerCase())) return false
     if (priority !== "all" && t.priority !== priority) return false
     if (status !== "all" && t.column?.name !== status) return false
+    if (department !== "all" && t.department !== department) return false
     return true
   })
 
@@ -89,6 +97,21 @@ function TicketFilterTable({
             ))}
           </SelectContent>
         </Select>
+        {departments.length > 1 && (
+          <Select value={department} onValueChange={(value) => setDepartment(value ?? "all")}>
+            <SelectTrigger className="w-full sm:w-44">
+              <SelectValue placeholder="Department" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All departments</SelectItem>
+              {departments.map((d) => (
+                <SelectItem key={d} value={d}>
+                  {d}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <Select value={priority} onValueChange={(value) => setPriority(value ?? "all")}>
           <SelectTrigger className="w-full sm:w-40">
             <SelectValue placeholder="Priority" />
@@ -109,6 +132,7 @@ function TicketFilterTable({
             <TableRow>
               <TableHead>Ticket</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Department</TableHead>
               <TableHead>Priority</TableHead>
               <TableHead>Assignee</TableHead>
               <TableHead className="text-right">Created</TableHead>
@@ -135,6 +159,7 @@ function TicketFilterTable({
                     </Badge>
                   )}
                 </TableCell>
+                <TableCell className="text-sm text-muted-foreground">{ticket.department ?? "—"}</TableCell>
                 <TableCell>
                   <PriorityBadge priority={ticket.priority} />
                 </TableCell>
@@ -168,10 +193,23 @@ function TicketFilterTable({
   )
 }
 
-export function TicketsTable({ tickets, currentUserId }: { tickets: TicketRow[]; currentUserId: string }) {
+export function TicketsTable({
+  tickets,
+  currentUserId,
+  leadProjectIds = [],
+}: {
+  tickets: TicketRow[]
+  currentUserId: string
+  leadProjectIds?: string[]
+}) {
   const myTickets = useMemo(
     () => tickets.filter((t) => t.assignee?.id === currentUserId || t.reporterId === currentUserId),
     [tickets, currentUserId]
+  )
+  const isProjectLead = leadProjectIds.length > 0
+  const unassignedTickets = useMemo(
+    () => tickets.filter((t) => !t.assignee && leadProjectIds.includes(t.projectId)),
+    [tickets, leadProjectIds]
   )
 
   return (
@@ -179,6 +217,9 @@ export function TicketsTable({ tickets, currentUserId }: { tickets: TicketRow[];
       <TabsList>
         <TabsTrigger value="all">All tickets ({tickets.length})</TabsTrigger>
         <TabsTrigger value="mine">My tickets ({myTickets.length})</TabsTrigger>
+        {isProjectLead && (
+          <TabsTrigger value="unassigned">Unassigned ({unassignedTickets.length})</TabsTrigger>
+        )}
       </TabsList>
       <TabsContent value="all" className="mt-3">
         <TicketFilterTable tickets={tickets} emptyMessage="Raise a ticket and it will show up here." />
@@ -189,6 +230,14 @@ export function TicketsTable({ tickets, currentUserId }: { tickets: TicketRow[];
           emptyMessage="Tickets assigned to you or raised by you will show up here."
         />
       </TabsContent>
+      {isProjectLead && (
+        <TabsContent value="unassigned" className="mt-3">
+          <TicketFilterTable
+            tickets={unassignedTickets}
+            emptyMessage="Nothing waiting on triage in your projects."
+          />
+        </TabsContent>
+      )}
     </Tabs>
   )
 }

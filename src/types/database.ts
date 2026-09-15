@@ -57,9 +57,31 @@ export type Project = {
   description: string | null
   status: ProjectStatus
   is_support_project: boolean
+  lead_id: string | null
   created_by: string | null
   created_at: string
   updated_at: string
+}
+
+export type Department = {
+  id: string
+  org_id: string
+  name: string
+  created_at: string
+}
+
+export type OrgMemberDepartment = {
+  id: string
+  org_member_id: string
+  department_id: string
+  created_at: string
+}
+
+export type ProjectDepartment = {
+  id: string
+  project_id: string
+  department_id: string
+  created_at: string
 }
 
 export type BoardColumn = {
@@ -84,6 +106,7 @@ export type Issue = {
   reporter_id: string | null
   assignee_id: string | null
   linked_project_id: string | null
+  department_id: string | null
   position: number
   due_date: string | null
   resolved_at: string | null
@@ -226,6 +249,24 @@ export type Database = {
         Row: AppNotification
         Insert: Partial<AppNotification> & { user_id: string; type: string; title: string }
         Update: Partial<AppNotification>
+        Relationships: Relationships
+      }
+      departments: {
+        Row: Department
+        Insert: Partial<Department> & { org_id: string; name: string }
+        Update: Partial<Department>
+        Relationships: Relationships
+      }
+      org_member_departments: {
+        Row: OrgMemberDepartment
+        Insert: Partial<OrgMemberDepartment> & { org_member_id: string; department_id: string }
+        Update: Partial<OrgMemberDepartment>
+        Relationships: Relationships
+      }
+      project_departments: {
+        Row: ProjectDepartment
+        Insert: Partial<ProjectDepartment> & { project_id: string; department_id: string }
+        Update: Partial<ProjectDepartment>
         Relationships: Relationships
       }
     }

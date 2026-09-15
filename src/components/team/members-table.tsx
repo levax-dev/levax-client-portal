@@ -4,6 +4,7 @@ import { useTransition } from "react"
 import { MoreHorizontal } from "lucide-react"
 
 import { removeMember, updateMemberRole } from "@/app/actions/team"
+import { MemberDepartmentsEditor } from "@/components/team/member-departments-editor"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -21,13 +22,22 @@ export interface MemberRow {
   id: string
   role: OrgRole
   profile: { id: string; full_name: string | null; email: string; avatar_url: string | null } | null
+  departmentIds: string[]
 }
 
 function initials(name: string) {
   return name.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase()
 }
 
-export function MembersTable({ members, currentUserId }: { members: MemberRow[]; currentUserId: string }) {
+export function MembersTable({
+  members,
+  currentUserId,
+  departments,
+}: {
+  members: MemberRow[]
+  currentUserId: string
+  departments: { id: string; name: string }[]
+}) {
   const [isPending, startTransition] = useTransition()
 
   return (
@@ -41,6 +51,7 @@ export function MembersTable({ members, currentUserId }: { members: MemberRow[];
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Role</TableHead>
+              <TableHead>Departments</TableHead>
               <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
@@ -70,6 +81,13 @@ export function MembersTable({ members, currentUserId }: { members: MemberRow[];
                   <Badge variant="secondary" className="capitalize">
                     {member.role}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  <MemberDepartmentsEditor
+                    orgMemberId={member.id}
+                    allDepartments={departments}
+                    memberDepartmentIds={member.departmentIds}
+                  />
                 </TableCell>
                 <TableCell>
                   <DropdownMenu>

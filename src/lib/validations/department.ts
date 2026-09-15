@@ -1,0 +1,6 @@
+import { z } from "zod"
+
+export const createDepartmentSchema = z.object({
+  name: z.string().min(1, "Name is required").max(120),
+})
+export type CreateDepartmentInput = z.infer<typeof createDepartmentSchema>

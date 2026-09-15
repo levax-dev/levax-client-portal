@@ -5,9 +5,8 @@ import { Book, Building2, KanbanSquare, Ticket as TicketIcon } from "lucide-reac
 
 import {
   ClientActiveProjectsStat,
-  ClientMyIssuesStat,
-  ClientOpenTicketsStat,
   ClientRecentActivitySection,
+  ClientTotalTicketsStat,
   StaffActiveProjectsStat,
   StaffContributionsSection,
   StaffMyIssuesStat,
@@ -22,15 +21,22 @@ import {
   ContributionsSkeleton,
   StatCardSkeleton,
 } from "@/components/dashboard/dashboard-skeletons"
+import { DepartmentFilter } from "@/components/dashboard/department-filter"
 import { PageHeader } from "@/components/page-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { getActiveOrg, requireUser } from "@/lib/auth"
+import { createClient } from "@/lib/supabase/server"
 
 export const metadata: Metadata = { title: "Dashboard" }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ dept?: string }>
+}) {
   const user = await requireUser()
+  const { dept: deptId } = await searchParams
 
   if (user.isStaff) {
     return (
@@ -53,34 +59,54 @@ export default async function DashboardPage() {
     )
   }
 
+  const membership = user.memberships.find((m) => m.org.id === org.id)
+  const isOrgAdmin = membership?.role === "admin"
+  const supabase = await createClient()
+
+  const { data: departments } = isOrgAdmin
+    ? await supabase.from("departments").select("id, name").eq("org_id", org.id).order("name")
+    : await supabase
+        .from("org_members")
+        .select("org_member_departments(departments(id, name))")
+        .eq("org_id", org.id)
+        .eq("user_id", user.id)
+        .maybeSingle()
+        .then(({ data }) => ({
+          data: (
+            (data?.org_member_departments as unknown as { departments: { id: string; name: string } | null }[]) ?? []
+          )
+            .map((d) => d.departments)
+            .filter((d): d is { id: string; name: string } => !!d),
+        }))
+
   return (
     <div className="space-y-6">
       <PageHeader
         title={`Welcome, ${user.profile.full_name?.split(" ")[0] ?? "there"}`}
         description={`Here's what's happening at ${org.name}.`}
         actions={
-          <Button render={<Link href="/tickets/new" />}>
-            <TicketIcon />
-            New ticket
-          </Button>
+          <div className="flex items-center gap-2">
+            <DepartmentFilter departments={departments ?? []} activeDeptId={deptId} />
+            <Button render={<Link href="/tickets/new" />}>
+              <TicketIcon />
+              New ticket
+            </Button>
+          </div>
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <Suspense fallback={<StatCardSkeleton />}>
-          <ClientOpenTicketsStat orgId={org.id} />
+          <ClientActiveProjectsStat orgId={org.id} deptId={deptId} />
         </Suspense>
         <Suspense fallback={<StatCardSkeleton />}>
-          <ClientMyIssuesStat orgId={org.id} userId={user.id} />
-        </Suspense>
-        <Suspense fallback={<StatCardSkeleton />}>
-          <ClientActiveProjectsStat orgId={org.id} />
+          <ClientTotalTicketsStat orgId={org.id} deptId={deptId} />
         </Suspense>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Suspense fallback={<ActivitySkeleton />}>
-          <ClientRecentActivitySection orgId={org.id} />
+          <ClientRecentActivitySection orgId={org.id} deptId={deptId} />
         </Suspense>
 
         <Card>

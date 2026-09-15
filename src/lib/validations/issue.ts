@@ -4,9 +4,10 @@ export const issuePriorities = ["low", "medium", "high", "urgent"] as const
 export const issueTypes = ["ticket", "task", "bug", "feature"] as const
 
 export const createTicketSchema = z.object({
+  projectId: z.uuid("Choose a project"),
+  departmentId: z.uuid().optional(),
   title: z.string().min(1, "Title is required").max(200),
   description: z.string().max(10000).optional().default(""),
-  priority: z.enum(issuePriorities).default("medium"),
 })
 export type CreateTicketInput = z.infer<typeof createTicketSchema>
 
@@ -49,5 +50,7 @@ export type CommentInput = z.infer<typeof commentSchema>
 export const createProjectSchema = z.object({
   name: z.string().min(1, "Name is required").max(120),
   description: z.string().max(2000).optional().default(""),
+  departmentIds: z.array(z.uuid()).min(1, "Choose at least one department"),
+  leadId: z.string().optional(),
 })
 export type CreateProjectInput = z.infer<typeof createProjectSchema>

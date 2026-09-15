@@ -10,7 +10,11 @@ import { createProjectSchema } from "@/lib/validations/issue"
 export type ActionState = { error?: string; success?: string } | null
 
 export async function createProject(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const parsed = createProjectSchema.safeParse(Object.fromEntries(formData))
+  const raw = {
+    ...Object.fromEntries(formData),
+    departmentIds: formData.getAll("departmentIds"),
+  }
+  const parsed = createProjectSchema.safeParse(raw)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" }
 
   const user = await requireUser()
@@ -25,6 +29,7 @@ export async function createProject(_prev: ActionState, formData: FormData): Pro
       org_id: org.id,
       name: parsed.data.name,
       description: parsed.data.description,
+      lead_id: parsed.data.leadId || null,
       created_by: user.id,
     })
     .select("id")
@@ -35,6 +40,11 @@ export async function createProject(_prev: ActionState, formData: FormData): Pro
     p_project_id: project.id,
   })
   if (seedError) return { error: seedError.message }
+
+  const { error: deptError } = await supabase
+    .from("project_departments")
+    .insert(parsed.data.departmentIds.map((departmentId) => ({ project_id: project.id, department_id: departmentId })))
+  if (deptError) return { error: deptError.message }
 
   revalidatePath("/projects")
   redirect(`/projects/${project.id}`)

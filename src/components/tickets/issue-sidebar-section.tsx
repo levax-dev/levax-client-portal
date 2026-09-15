@@ -37,7 +37,11 @@ export async function IssueSidebarSection({
 
   const [{ data: columns }, { data: assignableUsers }, { data: linkableProjects }] = await Promise.all([
     supabase.from("board_columns").select("id, name, color").eq("project_id", projectId).order("position"),
-    supabase.from("org_members").select("profiles(id, full_name, avatar_url)").eq("org_id", orgId),
+    supabase
+      .from("profiles")
+      .select("id, full_name, avatar_url")
+      .in("platform_role", ["staff", "super_admin"])
+      .order("full_name"),
     showLinkedProject
       ? supabase
           .from("projects")
@@ -49,9 +53,7 @@ export async function IssueSidebarSection({
       : Promise.resolve({ data: [] as { id: string; name: string }[] }),
   ])
 
-  const assignees = (assignableUsers ?? [])
-    .map((row) => row.profiles as unknown as Person | null)
-    .filter((p): p is Person => !!p)
+  const assignees = assignableUsers ?? []
 
   return (
     <IssueSidebar

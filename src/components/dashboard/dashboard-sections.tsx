@@ -160,45 +160,48 @@ export async function StaffRecentActivitySection() {
 
 // ── Client (single-org) sections ────────────────────────────────────────
 
-export async function ClientOpenTicketsStat({ orgId }: { orgId: string }) {
+export async function ClientTotalTicketsStat({ orgId, deptId }: { orgId: string; deptId?: string }) {
   const supabase = await createClient()
-  const { count } = await supabase
-    .from("issues")
-    .select("id, board_columns!inner(is_done_column)", { count: "exact", head: true })
-    .eq("org_id", orgId)
-    .eq("type", "ticket")
-    .eq("board_columns.is_done_column", false)
-  return <StatCard label="Open tickets" value={count ?? 0} icon={TicketIcon} />
-}
-
-export async function ClientMyIssuesStat({ orgId, userId }: { orgId: string; userId: string }) {
-  const supabase = await createClient()
-  const { count } = await supabase
+  let query = supabase
     .from("issues")
     .select("id", { count: "exact", head: true })
     .eq("org_id", orgId)
-    .eq("assignee_id", userId)
-  return <StatCard label="Assigned to me" value={count ?? 0} icon={KanbanSquare} />
+    .eq("type", "ticket")
+  if (deptId) query = query.eq("department_id", deptId)
+  const { count } = await query
+  return <StatCard label="Total tickets" value={count ?? 0} icon={TicketIcon} />
 }
 
-export async function ClientActiveProjectsStat({ orgId }: { orgId: string }) {
+export async function ClientActiveProjectsStat({ orgId, deptId }: { orgId: string; deptId?: string }) {
   const supabase = await createClient()
+  if (deptId) {
+    const { count } = await supabase
+      .from("project_departments")
+      .select("project_id, projects!inner(id, org_id, status)", { count: "exact", head: true })
+      .eq("department_id", deptId)
+      .eq("projects.org_id", orgId)
+      .eq("projects.status", "active")
+    return <StatCard label="Active projects" value={count ?? 0} icon={KanbanSquare} />
+  }
   const { count } = await supabase
     .from("projects")
     .select("id", { count: "exact", head: true })
     .eq("org_id", orgId)
     .eq("is_support_project", false)
+    .eq("status", "active")
   return <StatCard label="Active projects" value={count ?? 0} icon={KanbanSquare} />
 }
 
-export async function ClientRecentActivitySection({ orgId }: { orgId: string }) {
+export async function ClientRecentActivitySection({ orgId, deptId }: { orgId: string; deptId?: string }) {
   const supabase = await createClient()
-  const { data: recentIssues } = await supabase
+  let query = supabase
     .from("issues")
     .select("id, title, priority, type, created_at")
     .eq("org_id", orgId)
     .order("created_at", { ascending: false })
     .limit(6)
+  if (deptId) query = query.eq("department_id", deptId)
+  const { data: recentIssues } = await query
 
   return (
     <Card className="lg:col-span-2">
