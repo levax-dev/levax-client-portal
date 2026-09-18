@@ -50,6 +50,9 @@
   --color-brand-gold: var(--brand-gold);
   --color-brand-gold-ink: var(--brand-gold-ink);
   --color-brand-blue: var(--brand-blue);
+  --color-status-good: var(--status-good);
+  --color-status-warning: var(--status-warning);
+  --color-status-critical: var(--status-critical);
 }
 
 /*
@@ -93,6 +96,18 @@
   --sidebar-accent-foreground: oklch(0.32 0.09 269);
   --sidebar-border: oklch(0.91 0.01 269);
   --sidebar-ring: oklch(0.42 0.167 269);
+
+  /*
+    Delivery status. Three roles only — on track / due now / overdue.
+    A fourth "serious" orange was dropped after validation: it measured only
+    12.3 ΔE from the warning yellow, i.e. hard to tell apart even with full
+    colour vision. Good-vs-overdue is red/green and so cannot survive
+    deuteranopia at any saturation, which is why <StatusPill> always renders an
+    icon and a word — the colour is reinforcement, never the message.
+  */
+  --status-good: oklch(0.6 0.16 150);
+  --status-warning: oklch(0.76 0.15 78);
+  --status-critical: oklch(0.56 0.21 27);
 }
 
 .dark {
@@ -130,6 +145,11 @@
   --sidebar-accent-foreground: oklch(0.9 0.035 269);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.64 0.15 269);
+
+  /* Lighter steps, picked against the dark card rather than flipped from light. */
+  --status-good: oklch(0.74 0.17 150);
+  --status-warning: oklch(0.85 0.15 85);
+  --status-critical: oklch(0.68 0.2 25);
 }
 
 @layer base {

@@ -14,6 +14,16 @@ knowledge base, and team/account management — one login per client organizatio
 - **Staff** (your team, `profiles.platform_role = 'staff' | 'super_admin'`) bypass that scoping and
   can see every organization. They pick which org they're viewing with the org switcher in the top
   bar (`/admin/organizations` to manage orgs directly).
+- **Projects need client sign-off.** Staff propose a project; it sits at `approval_status = pending`
+  until any member of the client org approves or sends it back with a reason. Approving is routed
+  through a `SECURITY DEFINER` function (`decide_project`) rather than a broad UPDATE policy, so the
+  right to approve can't be used to rename a project or move its dates.
+- **Clients raise tickets; staff raise tasks.** A ticket is a request, categorised as an app
+  request, workflow automation, bug report or BI report. A task is the work that answers it — and
+  every task carries `parent_ticket_id`, enforced by a check constraint, so all delivery traces back
+  to something a client actually asked for. One ticket can spawn many tasks. Clients can read the
+  Kanban board and comment on tickets, but the board is read-only to them (enforced in RLS, not just
+  the UI).
 - **Issues** are a single unified table (`issues`) that powers both support tickets and Kanban work
   items — a `type` column (`ticket` / `task` / `bug` / `feature`) distinguishes them. Every org gets
   an auto-created "Support" project with a ticket-style board (Open → In Progress → Waiting on
@@ -35,14 +45,22 @@ Create a new project at [supabase.com](https://supabase.com/dashboard). Grab, fr
 - `service_role` key → `SUPABASE_SERVICE_ROLE_KEY` (server-only — never expose to the client)
 
 Copy `.env.example` to `.env.local` and fill these in, plus `NEXT_PUBLIC_APP_URL`
-(`http://localhost:3000` for local dev).
+(`http://localhost:3000` for local dev) and `NEXT_PUBLIC_APP_TIMEZONE`.
 
-### 2. Run the database migration
+`NEXT_PUBLIC_APP_TIMEZONE` decides when "today" rolls over on the schedule, dashboard and work log.
+It matters: Vercel runs in UTC, so leaving it unset would flip the date mid-morning for a team in
+Asia and quietly move work between "due today" and "overdue".
 
-Open the Supabase dashboard's **SQL Editor** and run the contents of
-`supabase/migrations/0001_init.sql`. It creates every table, RLS policy, trigger, and the private
-`attachments` storage bucket. (If you use the Supabase CLI instead: `supabase link` then
-`supabase db push`.)
+### 2. Run the database migrations
+
+Open the Supabase dashboard's **SQL Editor** and run the files in `supabase/migrations/` **in
+order**, `0001_init.sql` first. `0001` creates every table, RLS policy, trigger, and the private
+`attachments` storage bucket; the later files add profile fields, departments and project leads,
+and then delivery planning (approvals, ticket categories, task lineage, timelines and effort).
+(If you use the Supabase CLI instead: `supabase link` then `supabase db push`.)
+
+`0005_delivery_planning.sql` adopts any work items that predate ticket tracking by parenting them
+to a root ticket per board, so it is safe to run against an existing database.
 
 ### 3. Configure email
 
@@ -91,6 +109,32 @@ The logo lives at `public/logo-icon.png` (mark only) and `public/logo-full.png` 
 replace those and the sidebar/login-page references in `src/components/layout/app-sidebar.tsx` and
 `src/app/(auth)/layout.tsx` if the brand changes.
 
+## The planning views
+
+| Route | Who | What it answers |
+|---|---|---|
+| `/dashboard` | everyone | Role-aware KPIs. Clients lead with what needs their approval, then what lands today and what has slipped. Staff lead with their own queue and week-vs-capacity; project leads also get untriaged tickets and per-person load. |
+| `/schedule` | everyone | Today / this week / this month / custom range, as a table. Clients see what their approved projects will deliver; staff also get "no delivery date set", and leads can flip the whole page between their own queue and their team's, grouped per person. |
+| `/work-log` | everyone | What was closed in a period and *what was actually done* — closing a task requires a resolution note, and that note is what the client reads back. |
+| `/team-tracking` | project leads | Per-person load against weekly capacity, completion rate, and a per-project breakdown. |
+
+A "team lead" is not a separate role — it is whoever is `projects.lead_id` on at least one project,
+and their team is whoever is assigned work on those boards. Leadership follows the work rather than
+a parallel org chart.
+
+### Effort and capacity
+
+Tasks carry `estimated_hours`; each profile carries `weekly_capacity_hours` (default 40, editable on
+the Account page by staff). The meters on the schedule and team-tracking views read planned hours
+for the period against that capacity, so "plan for the week" is answerable rather than a task count.
+
+### Attachments
+
+Tickets accept images, video, PDF, Word, Excel, PowerPoint and zip, with per-kind size caps
+(`src/lib/uploads.ts`). It is an **allowlist** — anything not named is refused, including `.svg`,
+since attachments are served from a signed URL and SVG can carry script. The browser checks first as
+a courtesy; the server re-checks every file, because Server Functions are reachable by direct POST.
+
 ## What's not built yet
 
 - Billing/invoicing (deferred by design — team/account management ships without it in v1).
@@ -98,3 +142,5 @@ replace those and the sidebar/login-page references in `src/components/layout/ap
   UI only exposes globally-visible articles for now).
 - Real-time live updates (comments/board changes refresh on navigation/action, not via websocket
   push).
+- CSV/Excel export of the planning tables, a per-issue audit trail, and click-to-sort columns —
+  scoped out of this pass, not blocked by anything.

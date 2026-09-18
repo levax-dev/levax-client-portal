@@ -29,6 +29,8 @@ export default async function AccountPage() {
             jobTitle={user.profile.job_title ?? ""}
             location={user.profile.location ?? ""}
             bio={user.profile.bio ?? ""}
+            weeklyCapacityHours={Number(user.profile.weekly_capacity_hours ?? 40)}
+            showCapacity={user.isStaff}
           />
         </CardContent>
       </Card>

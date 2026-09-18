@@ -18,7 +18,7 @@ import { useDroppable } from "@dnd-kit/core"
 import { Plus } from "lucide-react"
 
 import { moveIssue } from "@/app/actions/issues"
-import { NewIssueDialog } from "@/components/projects/new-issue-dialog"
+import { NewIssueDialog, type TicketOption } from "@/components/projects/new-issue-dialog"
 import { PriorityBadge } from "@/components/priority-badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -46,19 +46,21 @@ function initials(name: string) {
   return name.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase()
 }
 
-function IssueCard({ issue }: { issue: KanbanIssue }) {
+function IssueCard({ issue, canEdit = true }: { issue: KanbanIssue; canEdit?: boolean }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: issue.id,
+    disabled: !canEdit,
   })
 
   return (
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      {...attributes}
-      {...listeners}
+      {...(canEdit ? attributes : {})}
+      {...(canEdit ? listeners : {})}
       className={cn(
-        "touch-none rounded-lg border bg-card p-3 shadow-xs transition-opacity",
+        "rounded-lg border bg-card p-3 shadow-xs transition-opacity",
+        canEdit && "touch-none",
         isDragging && "opacity-40"
       )}
     >
@@ -88,11 +90,13 @@ function IssueCard({ issue }: { issue: KanbanIssue }) {
 function Column({
   column,
   onAddIssue,
+  canEdit,
 }: {
   column: KanbanColumn
   onAddIssue: (columnId: string) => void
+  canEdit: boolean
 }) {
-  const { setNodeRef } = useDroppable({ id: column.id })
+  const { setNodeRef } = useDroppable({ id: column.id, disabled: !canEdit })
 
   return (
     <div className="flex w-72 shrink-0 flex-col rounded-xl bg-muted/40">
@@ -102,14 +106,21 @@ function Column({
           <span className="text-sm font-medium">{column.name}</span>
           <span className="text-xs text-muted-foreground">{column.issues.length}</span>
         </div>
-        <Button variant="ghost" size="icon-sm" onClick={() => onAddIssue(column.id)}>
-          <Plus className="size-3.5" />
-        </Button>
+        {canEdit && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={"Add a task to " + column.name}
+            onClick={() => onAddIssue(column.id)}
+          >
+            <Plus className="size-3.5" />
+          </Button>
+        )}
       </div>
       <div ref={setNodeRef} className="flex min-h-24 flex-1 flex-col gap-2 px-2 pb-2">
         <SortableContext items={column.issues.map((i) => i.id)} strategy={verticalListSortingStrategy}>
           {column.issues.map((issue) => (
-            <IssueCard key={issue.id} issue={issue} />
+            <IssueCard key={issue.id} issue={issue} canEdit={canEdit} />
           ))}
         </SortableContext>
       </div>
@@ -121,10 +132,15 @@ export function KanbanBoard({
   projectId,
   initialColumns,
   assignableUsers,
+  tickets,
+  canEdit,
 }: {
   projectId: string
   initialColumns: KanbanColumn[]
   assignableUsers: { id: string; full_name: string | null }[]
+  tickets: TicketOption[]
+  /** Clients can read the board but not move or add to it. */
+  canEdit: boolean
 }) {
   const [columns, setColumns] = useState(initialColumns)
   const [activeIssue, setActiveIssue] = useState<KanbanIssue | null>(null)
@@ -147,6 +163,7 @@ export function KanbanBoard({
 
   function handleDragEnd(event: DragEndEvent) {
     setActiveIssue(null)
+    if (!canEdit) return
     const { active, over } = event
     if (!over) return
 
@@ -199,18 +216,26 @@ export function KanbanBoard({
       >
         <div className="flex gap-3 overflow-x-auto pb-4">
           {columns.map((column) => (
-            <Column key={column.id} column={column} onAddIssue={setDialogColumnId} />
+            <Column
+              key={column.id}
+              column={column}
+              onAddIssue={setDialogColumnId}
+              canEdit={canEdit}
+            />
           ))}
         </div>
         <DragOverlay>{activeIssue && <IssueCard issue={activeIssue} />}</DragOverlay>
       </DndContext>
 
-      <NewIssueDialog
-        projectId={projectId}
-        columnId={dialogColumnId}
-        assignableUsers={assignableUsers}
-        onOpenChange={(open) => !open && setDialogColumnId(null)}
-      />
+      {canEdit && (
+        <NewIssueDialog
+          projectId={projectId}
+          columnId={dialogColumnId}
+          assignableUsers={assignableUsers}
+          tickets={tickets}
+          onOpenChange={(open) => !open && setDialogColumnId(null)}
+        />
+      )}
     </>
   )
 }

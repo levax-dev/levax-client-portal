@@ -8,19 +8,20 @@ import { AppSidebar } from "@/components/layout/app-sidebar"
 import { NotificationBellSection } from "@/components/layout/notification-bell-section"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserMenu } from "@/components/layout/user-menu"
-import { getActiveOrg, requireUser } from "@/lib/auth"
+import { getViewer } from "@/lib/roles"
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const user = await requireUser()
-  const activeOrg = await getActiveOrg(user)
-
-  const isOrgAdmin = user.memberships.some(
-    (m) => m.org.id === activeOrg?.id && m.role === "admin"
-  )
+  const viewer = await getViewer()
+  const { user, org: activeOrg } = viewer
 
   return (
     <SidebarProvider>
-      <AppSidebar isStaff={user.isStaff} isOrgAdmin={isOrgAdmin} orgName={activeOrg?.name ?? null} />
+      <AppSidebar
+        isStaff={viewer.isStaff}
+        isOrgAdmin={viewer.isOrgAdmin}
+        isProjectLead={viewer.isProjectLead}
+        orgName={activeOrg?.name ?? null}
+      />
       <SidebarInset>
         <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />

@@ -3,12 +3,15 @@
 import { useActionState, useState } from "react"
 
 import { createTicket, type ActionState } from "@/app/actions/issues"
+import { FilePicker } from "@/components/tickets/file-picker"
 import { SubmitButton } from "@/components/submit-button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { TICKET_CATEGORIES } from "@/lib/issue-meta"
+import type { TicketCategory } from "@/types/database"
 
 export interface ProjectOption {
   id: string
@@ -21,9 +24,12 @@ const initialState: ActionState = null
 export function NewTicketForm({ projects }: { projects: ProjectOption[] }) {
   const [state, action] = useActionState(createTicket, initialState)
   const [projectId, setProjectId] = useState(projects[0]?.id ?? "")
+  const [category, setCategory] = useState<TicketCategory>("app_request")
+  const [filesValid, setFilesValid] = useState(true)
 
   const selectedProject = projects.find((p) => p.id === projectId)
   const departments = selectedProject?.departments ?? []
+  const categoryHint = TICKET_CATEGORIES.find((c) => c.value === category)?.hint
 
   return (
     <form action={action}>
@@ -33,6 +39,7 @@ export function NewTicketForm({ projects }: { projects: ProjectOption[] }) {
             <AlertDescription>{state.error}</AlertDescription>
           </Alert>
         )}
+
         <Field>
           <FieldLabel htmlFor="projectId">Project</FieldLabel>
           <Select
@@ -53,6 +60,7 @@ export function NewTicketForm({ projects }: { projects: ProjectOption[] }) {
             </SelectContent>
           </Select>
         </Field>
+
         {departments.length > 1 && (
           <Field>
             <FieldLabel htmlFor="departmentId">Department</FieldLabel>
@@ -75,11 +83,43 @@ export function NewTicketForm({ projects }: { projects: ProjectOption[] }) {
             </Select>
           </Field>
         )}
-        {departments.length === 1 && <input type="hidden" name="departmentId" value={departments[0].id} />}
+        {departments.length === 1 && (
+          <input type="hidden" name="departmentId" value={departments[0].id} />
+        )}
+
+        <Field>
+          <FieldLabel htmlFor="category">What kind of request is this?</FieldLabel>
+          <Select
+            name="category"
+            items={Object.fromEntries(TICKET_CATEGORIES.map((c) => [c.value, c.label]))}
+            value={category}
+            onValueChange={(value) => value && setCategory(value as TicketCategory)}
+          >
+            <SelectTrigger id="category" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TICKET_CATEGORIES.map((c) => (
+                <SelectItem key={c.value} value={c.value}>
+                  {c.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {categoryHint && <FieldDescription>{categoryHint}</FieldDescription>}
+        </Field>
+
         <Field>
           <FieldLabel htmlFor="title">Subject</FieldLabel>
-          <Input id="title" name="title" placeholder="Eg. Can't log in to the dashboard" required maxLength={200} />
+          <Input
+            id="title"
+            name="title"
+            placeholder="Eg. Can't log in to the dashboard"
+            required
+            maxLength={200}
+          />
         </Field>
+
         <Field>
           <FieldLabel htmlFor="description">Details</FieldLabel>
           <Textarea
@@ -89,10 +129,22 @@ export function NewTicketForm({ projects }: { projects: ProjectOption[] }) {
             rows={6}
           />
           <FieldDescription>
-            You can attach files after the ticket is created. Priority is set by our team once we triage it.
+            Priority is set by our team once we triage it.
           </FieldDescription>
         </Field>
-        <SubmitButton pendingText="Submitting…">Submit ticket</SubmitButton>
+
+        <Field>
+          <FieldLabel>Attachments</FieldLabel>
+          <FilePicker onValidityChange={setFilesValid} />
+          <FieldDescription>
+            Screenshots and screen recordings usually get a request moving faster than a description
+            alone.
+          </FieldDescription>
+        </Field>
+
+        <SubmitButton pendingText="Submitting…" disabled={!filesValid}>
+          Submit ticket
+        </SubmitButton>
       </FieldGroup>
     </form>
   )

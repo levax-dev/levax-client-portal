@@ -25,16 +25,19 @@ import { cn } from "@/lib/utils"
 export function AppSidebar({
   isStaff,
   isOrgAdmin,
+  isProjectLead,
   orgName,
 }: {
   isStaff: boolean
   isOrgAdmin: boolean
+  isProjectLead: boolean
   orgName: string | null
 }) {
   const pathname = usePathname()
 
   const canShow = (item: NavItem) => {
     if (item.visibility === "staff") return isStaff
+    if (item.visibility === "project-lead") return isProjectLead
     if (item.visibility === "org-admin") return isStaff || isOrgAdmin
     return true
   }

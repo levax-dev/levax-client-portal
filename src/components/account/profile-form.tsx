@@ -5,7 +5,7 @@ import { useActionState } from "react"
 import { updateOwnProfile, type ActionState } from "@/app/actions/account"
 import { SubmitButton } from "@/components/submit-button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
@@ -18,6 +18,8 @@ export function ProfileForm({
   jobTitle,
   location,
   bio,
+  weeklyCapacityHours,
+  showCapacity,
 }: {
   fullName: string
   email: string
@@ -25,6 +27,9 @@ export function ProfileForm({
   jobTitle: string
   location: string
   bio: string
+  weeklyCapacityHours: number
+  /** Capacity only means something for the delivery team. */
+  showCapacity: boolean
 }) {
   const [state, action] = useActionState(updateOwnProfile, initialState)
 
@@ -63,6 +68,24 @@ export function ProfileForm({
             <Input id="location" name="location" defaultValue={location} placeholder="Eg. Chennai, India" maxLength={120} />
           </Field>
         </div>
+        {showCapacity && (
+          <Field>
+            <FieldLabel htmlFor="weeklyCapacityHours">Weekly capacity (hours)</FieldLabel>
+            <Input
+              id="weeklyCapacityHours"
+              name="weeklyCapacityHours"
+              type="number"
+              min={1}
+              max={80}
+              step={1}
+              defaultValue={weeklyCapacityHours}
+            />
+            <FieldDescription>
+              How many hours of delivery work you can take in a week. Your planned hours are measured
+              against this on the schedule and team tracking views.
+            </FieldDescription>
+          </Field>
+        )}
         <Field>
           <FieldLabel htmlFor="bio">Bio</FieldLabel>
           <Textarea id="bio" name="bio" defaultValue={bio} rows={3} placeholder="Eg. Manages vendor relationships and approves purchase orders." maxLength={500} />

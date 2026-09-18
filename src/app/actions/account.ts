@@ -38,10 +38,14 @@ export async function updateOwnProfile(_prev: ActionState, formData: FormData): 
       job_title: parsed.data.jobTitle || null,
       location: parsed.data.location || null,
       bio: parsed.data.bio || null,
+      ...(parsed.data.weeklyCapacityHours !== undefined
+        ? { weekly_capacity_hours: parsed.data.weeklyCapacityHours }
+        : {}),
     })
     .eq("id", user.id)
   if (error) return { error: error.message }
 
   revalidatePath("/account")
+  revalidatePath("/team-tracking")
   return { success: "Profile updated." }
 }

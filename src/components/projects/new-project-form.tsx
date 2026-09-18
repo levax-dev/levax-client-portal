@@ -17,9 +17,12 @@ const initialState: ActionState = null
 export function NewProjectForm({
   departments,
   staffProfiles,
+  needsApproval,
 }: {
   departments: { id: string; name: string }[]
   staffProfiles: { id: string; full_name: string | null }[]
+  /** Staff propose projects; the client signs them off before work starts. */
+  needsApproval: boolean
 }) {
   const [state, action] = useActionState(createProject, initialState)
 
@@ -63,6 +66,16 @@ export function NewProjectForm({
             departments.
           </FieldDescription>
         </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor="startDate">Planned start</FieldLabel>
+            <Input id="startDate" name="startDate" type="date" />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="targetDate">Target delivery</FieldLabel>
+            <Input id="targetDate" name="targetDate" type="date" />
+          </Field>
+        </div>
         <Field>
           <FieldLabel htmlFor="leadId">Project lead</FieldLabel>
           <Select name="leadId" items={Object.fromEntries(staffProfiles.map((p) => [p.id, p.full_name ?? "Unnamed"]))}>
@@ -81,8 +94,14 @@ export function NewProjectForm({
             The lead triages incoming tickets on this project — sets priority and assigns them to staff.
           </FieldDescription>
         </Field>
+        {needsApproval && (
+          <p className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
+            This goes to the client as a request. Work can&apos;t start on the board until someone
+            at the organization approves it.
+          </p>
+        )}
         <SubmitButton pendingText="Creating…" disabled={departments.length === 0}>
-          Create project
+          {needsApproval ? "Send for approval" : "Create project"}
         </SubmitButton>
       </FieldGroup>
     </form>

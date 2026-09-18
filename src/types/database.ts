@@ -5,6 +5,13 @@ export type ProjectStatus = "active" | "on_hold" | "completed" | "archived"
 export type IssueType = "ticket" | "task" | "bug" | "feature"
 export type IssuePriority = "low" | "medium" | "high" | "urgent"
 export type InviteStatus = "pending" | "accepted" | "revoked" | "expired"
+export type ApprovalStatus = "pending" | "approved" | "rejected"
+export type TicketCategory =
+  | "app_request"
+  | "workflow_automation"
+  | "bug_report"
+  | "bi_report"
+  | "other"
 
 export type Profile = {
   id: string
@@ -15,6 +22,7 @@ export type Profile = {
   job_title: string | null
   location: string | null
   bio: string | null
+  weekly_capacity_hours: number
   platform_role: PlatformRole
   created_at: string
   updated_at: string
@@ -57,6 +65,13 @@ export type Project = {
   description: string | null
   status: ProjectStatus
   is_support_project: boolean
+  approval_status: ApprovalStatus
+  requested_by: string | null
+  decided_by: string | null
+  decided_at: string | null
+  decision_note: string | null
+  start_date: string | null
+  target_date: string | null
   lead_id: string | null
   created_by: string | null
   created_at: string
@@ -107,8 +122,14 @@ export type Issue = {
   assignee_id: string | null
   linked_project_id: string | null
   department_id: string | null
+  category: TicketCategory | null
+  /** Every task traces back to the ticket that caused it; null only on tickets. */
+  parent_ticket_id: string | null
   position: number
+  start_date: string | null
   due_date: string | null
+  estimated_hours: number | null
+  resolution_note: string | null
   resolved_at: string | null
   created_at: string
   updated_at: string
@@ -274,6 +295,10 @@ export type Database = {
     Functions: {
       seed_default_columns: { Args: { p_project_id: string }; Returns: void }
       increment_kb_view_count: { Args: { p_article_id: string }; Returns: void }
+      decide_project: {
+        Args: { p_project: string; p_approve: boolean; p_note?: string | null }
+        Returns: void
+      }
     }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>

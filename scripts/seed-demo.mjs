@@ -43,21 +43,56 @@ async function upsertOrg(name, slug) {
   return org.id
 }
 
+// Support boards used to be created by a trigger on `organizations`; migration
+// 0004 dropped it so staff choose a project's departments explicitly. The seed
+// therefore has to create the board itself when an org doesn't have one.
+const SUPPORT_COLUMNS = [
+  { name: "Open", position: 0, color: "#3b82f6", is_done_column: false },
+  { name: "In Progress", position: 1, color: "#f59e0b", is_done_column: false },
+  { name: "Waiting on Client", position: 2, color: "#a855f7", is_done_column: false },
+  { name: "Resolved", position: 3, color: "#22c55e", is_done_column: true },
+  { name: "Closed", position: 4, color: "#64748b", is_done_column: true },
+]
+
 async function getSupportProject(orgId) {
-  const project = must(
-    await supabase
-      .from("projects")
-      .select("id")
-      .eq("org_id", orgId)
-      .eq("is_support_project", true)
-      .single(),
-    "fetch support project"
-  )
+  const { data: existing } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("org_id", orgId)
+    .eq("is_support_project", true)
+    .maybeSingle()
+
+  let projectId = existing?.id
+  if (!projectId) {
+    const project = must(
+      await supabase
+        .from("projects")
+        .insert({
+          org_id: orgId,
+          name: "Support",
+          description: "Support tickets and requests",
+          is_support_project: true,
+          status: "active",
+        })
+        .select("id")
+        .single(),
+      "create support project"
+    )
+    projectId = project.id
+    must(
+      await supabase
+        .from("board_columns")
+        .insert(SUPPORT_COLUMNS.map((c) => ({ ...c, project_id: projectId }))),
+      "seed support columns"
+    )
+    console.log("✓ support project created")
+  }
+
   const columns = must(
-    await supabase.from("board_columns").select("id, name, position").eq("project_id", project.id).order("position"),
+    await supabase.from("board_columns").select("id, name, position").eq("project_id", projectId).order("position"),
     "fetch support columns"
   )
-  return { projectId: project.id, columns }
+  return { projectId, columns }
 }
 
 async function createCustomProject(orgId, name, description) {
@@ -86,6 +121,56 @@ async function createCustomProject(orgId, name, description) {
   )
   console.log(`✓ project created: ${name}`)
   return { projectId: project.id, columns }
+}
+
+/**
+ * A project proposed but not yet signed off, so the client's approval queue
+ * has something in it on first login. Gets a board like any other — it just
+ * can't be worked until someone at the org approves.
+ */
+async function createPendingProject(orgId, name, description, requestedBy, leadId) {
+  const { data: existing } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("org_id", orgId)
+    .eq("name", name)
+    .maybeSingle()
+  if (existing) {
+    console.log(`= pending project exists: ${name}`)
+    return existing.id
+  }
+
+  const project = must(
+    await supabase
+      .from("projects")
+      .insert({
+        org_id: orgId,
+        name,
+        description,
+        approval_status: "pending",
+        status: "on_hold",
+        created_by: requestedBy,
+        requested_by: requestedBy,
+        lead_id: leadId,
+        start_date: dateFromToday(7),
+        target_date: dateFromToday(45),
+      })
+      .select("id")
+      .single(),
+    `create pending project ${name}`
+  )
+  must(await supabase.rpc("seed_default_columns", { p_project_id: project.id }), "seed pending columns")
+
+  // Attach every department the org has, so members can see it to approve it.
+  const { data: departments } = await supabase.from("departments").select("id").eq("org_id", orgId)
+  if (departments?.length) {
+    await supabase
+      .from("project_departments")
+      .insert(departments.map((d) => ({ project_id: project.id, department_id: d.id })))
+  }
+
+  console.log(`✓ pending project created: ${name}`)
+  return project.id
 }
 
 async function ensureContact(email, fullName) {
@@ -119,7 +204,25 @@ async function ensureMember(orgId, userId, role) {
   must(await supabase.from("org_members").insert({ org_id: orgId, user_id: userId, role }), "add org member")
 }
 
-async function createIssue({ orgId, projectId, columnId, type, title, description, priority, reporterId, assigneeId, position, resolved }) {
+async function createIssue({
+  orgId,
+  projectId,
+  columnId,
+  type,
+  title,
+  description,
+  priority,
+  reporterId,
+  assigneeId,
+  position,
+  resolved,
+  category = null,
+  parentTicketId = null,
+  startDate = null,
+  dueDate = null,
+  estimatedHours = null,
+  resolutionNote = null,
+}) {
   const { data: existing } = await supabase
     .from("issues")
     .select("id")
@@ -136,12 +239,20 @@ async function createIssue({ orgId, projectId, columnId, type, title, descriptio
         project_id: projectId,
         column_id: columnId,
         type,
+        category,
+        // Every task traces back to a ticket — a database constraint, not a
+        // convention, so the seed has to create tickets before tasks.
+        parent_ticket_id: parentTicketId,
         title,
         description,
         priority,
         reporter_id: reporterId,
         assignee_id: assigneeId,
         position,
+        start_date: startDate,
+        due_date: dueDate,
+        estimated_hours: estimatedHours,
+        resolution_note: resolved ? resolutionNote : null,
         resolved_at: resolved ? new Date().toISOString() : null,
       })
       .select("id")
@@ -150,6 +261,28 @@ async function createIssue({ orgId, projectId, columnId, type, title, descriptio
   )
   return issue.id
 }
+
+/** Plain `YYYY-MM-DD`, `offset` days from today. */
+function dateFromToday(offset) {
+  const d = new Date()
+  d.setUTCDate(d.getUTCDate() + offset)
+  return d.toISOString().slice(0, 10)
+}
+
+/**
+ * A delivery timeline per board column, chosen so the seeded data exercises
+ * every state the planning views care about: undated backlog, due today,
+ * upcoming, overdue, and delivered.
+ */
+const SCHEDULE_BY_COLUMN = [
+  { start: null, due: null, hours: null }, // Backlog — no timeline yet
+  { start: dateFromToday(-1), due: dateFromToday(0), hours: 6 }, // To Do — lands today
+  { start: dateFromToday(-2), due: dateFromToday(2), hours: 12 }, // In Progress — this week
+  { start: dateFromToday(-8), due: dateFromToday(-3), hours: 8 }, // In Review — overdue
+  { start: dateFromToday(-12), due: dateFromToday(-5), hours: 10 }, // Done
+]
+
+const SEED_CATEGORIES = ["app_request", "bug_report", "workflow_automation", "bi_report", "other"]
 
 async function addComment(issueId, authorId, body, isInternal = false) {
   await supabase.from("issue_comments").insert({ issue_id: issueId, author_id: authorId, body, is_internal: isInternal })
@@ -325,31 +458,16 @@ async function main() {
     const orgId = orgIds[slug]
     const reporterId = contacts[slug].admin
 
-    const { projectId, columns } = await createCustomProject(orgId, spec.name, spec.description)
-    for (const [title, type, priority, colIdx, assignToStaff] of spec.issues) {
-      await createIssue({
-        orgId,
-        projectId,
-        columnId: columns[colIdx].id,
-        type,
-        title,
-        description: `${title}.`,
-        priority,
-        reporterId: STAFF_ID,
-        assigneeId: assignToStaff ? STAFF_ID : null,
-        position: colIdx,
-        resolved: columns[colIdx].name === "Done",
-      })
-    }
-
+    // Tickets first: a task can't exist without the request behind it.
     const { projectId: supportProjectId, columns: supportColumns } = await getSupportProject(orgId)
     const ticketIds = []
-    for (const [title, priority, colIdx, assignToStaff, resolved] of spec.tickets) {
+    for (const [index, [title, priority, colIdx, assignToStaff, resolved]] of spec.tickets.entries()) {
       const id = await createIssue({
         orgId,
         projectId: supportProjectId,
         columnId: supportColumns[colIdx].id,
         type: "ticket",
+        category: SEED_CATEGORIES[index % SEED_CATEGORIES.length],
         title,
         description: `${title}. Reported via the client portal.`,
         priority,
@@ -357,8 +475,34 @@ async function main() {
         assigneeId: assignToStaff ? STAFF_ID : null,
         position: colIdx,
         resolved,
+        resolutionNote: `Investigated and closed out. ${title.toLowerCase()} is no longer reproducible.`,
       })
       ticketIds.push({ id, colIdx, title })
+    }
+
+    const { projectId, columns } = await createCustomProject(orgId, spec.name, spec.description)
+    for (const [index, [title, type, priority, colIdx, assignToStaff]] of spec.issues.entries()) {
+      const schedule = SCHEDULE_BY_COLUMN[colIdx] ?? SCHEDULE_BY_COLUMN[0]
+      const rootTicket = ticketIds[index % ticketIds.length]
+      await createIssue({
+        orgId,
+        projectId,
+        columnId: columns[colIdx].id,
+        type,
+        category: SEED_CATEGORIES[index % SEED_CATEGORIES.length],
+        parentTicketId: rootTicket.id,
+        title,
+        description: `${title}.`,
+        priority,
+        reporterId: STAFF_ID,
+        assigneeId: assignToStaff ? STAFF_ID : null,
+        position: colIdx,
+        startDate: schedule.start,
+        dueDate: schedule.due,
+        estimatedHours: schedule.hours,
+        resolved: columns[colIdx].name === "Done",
+        resolutionNote: `Shipped. ${title} completed and verified against the original request.`,
+      })
     }
 
     // Comment thread on the "In Progress" ticket (index 1)
@@ -394,6 +538,14 @@ async function main() {
         link: `/tickets/${openTicket.id}`,
       })
     }
+
+    await createPendingProject(
+      orgId,
+      `${spec.name} — Phase 2`,
+      "Proposed follow-on scope. Waiting on your approval before we start.",
+      STAFF_ID,
+      STAFF_ID
+    )
 
     console.log(`✓ seeded ${spec.issues.length} project issues + ${spec.tickets.length} tickets for ${spec.name}`)
   }

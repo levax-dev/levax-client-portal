@@ -25,5 +25,10 @@ export const updateProfileSchema = z.object({
   jobTitle: z.string().max(120).optional().default(""),
   location: z.string().max(120).optional().default(""),
   bio: z.string().max(500).optional().default(""),
+  /** Staff only — drives the load-vs-capacity meters on the planning views. */
+  weeklyCapacityHours: z
+    .union([z.literal(""), z.coerce.number().min(1, "At least an hour").max(80, "80 hours is the ceiling")])
+    .optional()
+    .transform((v) => (v === "" || v === undefined ? undefined : Number(v))),
 })
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>

@@ -34,7 +34,11 @@ export default async function NewProjectPage() {
               least one department attached.
             </p>
           )}
-          <NewProjectForm departments={departments ?? []} staffProfiles={staffProfiles ?? []} />
+          <NewProjectForm
+            departments={departments ?? []}
+            staffProfiles={staffProfiles ?? []}
+            needsApproval={user.isStaff}
+          />
         </CardContent>
       </Card>
     </div>
