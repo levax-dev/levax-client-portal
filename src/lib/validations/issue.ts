@@ -110,7 +110,11 @@ export const createProjectSchema = z.object({
   name: z.string().min(1, "Name is required").max(120),
   description: z.string().max(2000).optional().default(""),
   departmentIds: z.array(z.uuid()).min(1, "Choose at least one department"),
-  leadId: z.string().optional(),
+  /** "unassigned" is the sentinel the lead picker submits for no lead. */
+  leadId: z
+    .union([z.literal(""), z.literal("unassigned"), z.uuid("Choose a valid project lead")])
+    .optional()
+    .transform((v) => (v === "" || v === "unassigned" ? undefined : v)),
   startDate: optionalDate,
   targetDate: optionalDate,
 })

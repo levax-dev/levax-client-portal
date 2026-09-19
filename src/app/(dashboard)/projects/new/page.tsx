@@ -16,7 +16,19 @@ export default async function NewProjectPage() {
 
   const [{ data: departments }, { data: staffProfiles }] = await Promise.all([
     org ? supabase.from("departments").select("id, name").eq("org_id", org.id).order("name") : Promise.resolve({ data: [] }),
-    supabase.from("profiles").select("id, full_name").in("platform_role", ["staff", "super_admin"]).order("full_name"),
+    // Only a super admin may hand the lead to someone else, so everyone else
+    // is offered exactly one choice besides "unassigned": themselves.
+    user.isSuperAdmin
+      ? supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("platform_role", ["staff", "super_admin"])
+          .order("full_name")
+      : user.isStaff
+        ? supabase.from("profiles").select("id, full_name").eq("id", user.id)
+        : // A client admin can create a project but not staff it — a lead is
+          // one of our people, assigned on the board afterwards.
+          Promise.resolve({ data: [] as { id: string; full_name: string | null }[] }),
   ])
 
   return (
@@ -38,6 +50,7 @@ export default async function NewProjectPage() {
             departments={departments ?? []}
             staffProfiles={staffProfiles ?? []}
             needsApproval={user.isStaff}
+            canAssignAnyLead={user.isSuperAdmin}
           />
         </CardContent>
       </Card>

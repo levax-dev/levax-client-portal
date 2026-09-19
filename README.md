@@ -60,7 +60,8 @@ and then delivery planning (approvals, ticket categories, task lineage, timeline
 (If you use the Supabase CLI instead: `supabase link` then `supabase db push`.)
 
 `0005_delivery_planning.sql` adopts any work items that predate ticket tracking by parenting them
-to a root ticket per board, so it is safe to run against an existing database.
+to a root ticket per board, so it is safe to run against an existing database. `0006` adds in-app
+project-lead assignment.
 
 ### 3. Configure email
 
@@ -118,9 +119,24 @@ replace those and the sidebar/login-page references in `src/components/layout/ap
 | `/work-log` | everyone | What was closed in a period and *what was actually done* — closing a task requires a resolution note, and that note is what the client reads back. |
 | `/team-tracking` | project leads | Per-person load against weekly capacity, completion rate, and a per-project breakdown. |
 
+### Project leads
+
 A "team lead" is not a separate role — it is whoever is `projects.lead_id` on at least one project,
 and their team is whoever is assigned work on those boards. Leadership follows the work rather than
 a parallel org chart.
+
+Leads are assigned in the app, from the **Lead** control on a project's page:
+
+- a **super admin** can set the lead on any project;
+- a **project's current lead** can hand that project to another staff member;
+- everyone else sees who the lead is, but cannot change it.
+
+Being a lead carries real authority — ticket triage on that board, the team-tracking page, and
+visibility of everyone assigned work there — so the rule is enforced in the database by
+`assign_project_lead()` plus a trigger, not only in the Server Function. A broad `projects_update`
+policy already lets any staff member PATCH a project row through PostgREST, which would otherwise
+make the boundary advisory. Creating a project follows the same rule: a regular staff member can take
+the lead themselves or leave it open, and a lead must be one of your own staff.
 
 ### Effort and capacity
 

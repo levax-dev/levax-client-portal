@@ -18,11 +18,14 @@ export function NewProjectForm({
   departments,
   staffProfiles,
   needsApproval,
+  canAssignAnyLead,
 }: {
   departments: { id: string; name: string }[]
   staffProfiles: { id: string; full_name: string | null }[]
   /** Staff propose projects; the client signs them off before work starts. */
   needsApproval: boolean
+  /** Only super admins may hand the lead to someone other than themselves. */
+  canAssignAnyLead: boolean
 }) {
   const [state, action] = useActionState(createProject, initialState)
 
@@ -78,11 +81,19 @@ export function NewProjectForm({
         </div>
         <Field>
           <FieldLabel htmlFor="leadId">Project lead</FieldLabel>
-          <Select name="leadId" items={Object.fromEntries(staffProfiles.map((p) => [p.id, p.full_name ?? "Unnamed"]))}>
+          <Select
+            name="leadId"
+            items={{
+              unassigned: "Unassigned",
+              ...Object.fromEntries(staffProfiles.map((p) => [p.id, p.full_name ?? "Unnamed"])),
+            }}
+            defaultValue="unassigned"
+          >
             <SelectTrigger id="leadId" className="w-full">
-              <SelectValue placeholder="Unassigned" />
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="unassigned">Unassigned</SelectItem>
               {staffProfiles.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
                   {p.full_name ?? "Unnamed"}
@@ -91,7 +102,11 @@ export function NewProjectForm({
             </SelectContent>
           </Select>
           <FieldDescription>
-            The lead triages incoming tickets on this project — sets priority and assigns them to staff.
+            The lead triages incoming tickets on this project — sets priority, breaks them into tasks
+            and assigns them.{" "}
+            {canAssignAnyLead
+              ? "You can change this later from the project board."
+              : "Only a super admin can hand the lead to someone else; they can also change it later from the project board."}
           </FieldDescription>
         </Field>
         {needsApproval && (

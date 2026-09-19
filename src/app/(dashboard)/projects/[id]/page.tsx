@@ -5,9 +5,11 @@ import { CalendarRange } from "lucide-react"
 
 import { KanbanBoardSection } from "@/components/projects/kanban-board-section"
 import { ApprovalQueue } from "@/components/projects/approval-queue"
+import { ProjectLeadSection } from "@/components/projects/project-lead-section"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { PageHeader } from "@/components/page-header"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { formatDate } from "@/lib/periods"
 import { getProjectsAwaitingDecision } from "@/lib/queries/work"
 import { getViewer } from "@/lib/roles"
@@ -46,6 +48,9 @@ export default async function ProjectBoardPage({
               : "This project hasn't been approved yet."
           }
         />
+        <Suspense fallback={<Skeleton className="h-9 w-64" />}>
+          <ProjectLeadSection projectId={project.id} leadId={project.lead_id} />
+        </Suspense>
         <ApprovalQueue projects={thisOne} canDecide={!viewer.isStaff} showOrg={viewer.isStaff} />
       </div>
     )
@@ -57,7 +62,10 @@ export default async function ProjectBoardPage({
         title={project.name}
         description={project.description ?? undefined}
         actions={
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <Suspense fallback={<Skeleton className="h-9 w-56" />}>
+              <ProjectLeadSection projectId={project.id} leadId={project.lead_id} />
+            </Suspense>
             {project.target_date && (
               <Badge variant="outline" className="gap-1">
                 <CalendarRange className="size-3" />

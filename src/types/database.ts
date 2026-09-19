@@ -295,6 +295,10 @@ export type Database = {
     Functions: {
       seed_default_columns: { Args: { p_project_id: string }; Returns: void }
       increment_kb_view_count: { Args: { p_article_id: string }; Returns: void }
+      assign_project_lead: {
+        Args: { p_project: string; p_lead: string | null }
+        Returns: void
+      }
       decide_project: {
         Args: { p_project: string; p_approve: boolean; p_note?: string | null }
         Returns: void

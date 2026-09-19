@@ -31,7 +31,30 @@ export async function createProject(_prev: ActionState, formData: FormData): Pro
   const org = await getActiveOrg(user)
   if (!org) return { error: "No organization selected." }
 
+  // Making someone else the lead is an admin act — see assign_project_lead().
+  // Creating a project mustn't be a way around that, so a regular staff member
+  // can take the lead themselves or leave it open, and nothing else.
+  const requestedLeadId = parsed.data.leadId || null
+  if (requestedLeadId && requestedLeadId !== user.id && !user.isSuperAdmin) {
+    return {
+      error: "Only a super admin can make someone else the lead. Leave it unassigned or take it yourself.",
+    }
+  }
+
   const supabase = await createClient()
+
+  // The guard trigger covers UPDATE, not the initial INSERT, so the "a lead is
+  // one of our own people" rule is re-checked here.
+  if (requestedLeadId) {
+    const { data: candidate } = await supabase
+      .from("profiles")
+      .select("platform_role")
+      .eq("id", requestedLeadId)
+      .maybeSingle()
+    if (!candidate || !["staff", "super_admin"].includes(candidate.platform_role)) {
+      return { error: "A project lead must be a Leverage Axiom staff member." }
+    }
+  }
 
   const { data: project, error } = await supabase
     .from("projects")
@@ -39,7 +62,7 @@ export async function createProject(_prev: ActionState, formData: FormData): Pro
       org_id: org.id,
       name: parsed.data.name,
       description: parsed.data.description,
-      lead_id: parsed.data.leadId || null,
+      lead_id: requestedLeadId,
       start_date: startDate || null,
       target_date: targetDate || null,
       created_by: user.id,
@@ -182,6 +205,64 @@ export async function resubmitProject(id: string) {
   revalidatePath("/projects")
   revalidatePath(`/projects/${id}`)
   revalidatePath("/dashboard")
+}
+
+/**
+ * Assigns (or clears) a project's lead.
+ *
+ * A super admin can set the lead on any project; a project's current lead can
+ * hand their own project to another staff member. The real check lives in
+ * `assign_project_lead()` in the database — this is the friendly path to it,
+ * not the gate.
+ *
+ * The new lead picks up triage on that board and the team-tracking page
+ * immediately, so the paths that key off `projects.lead_id` all revalidate.
+ */
+export async function setProjectLead(
+  projectId: string,
+  leadId: string | null
+): Promise<ActionState> {
+  const user = await requireUser()
+  if (!user.isStaff) return { error: "Only Leverage Axiom staff can assign a project lead." }
+
+  const supabase = await createClient()
+
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id, org_id, name, lead_id")
+    .eq("id", projectId)
+    .maybeSingle()
+  if (!project) return { error: "Project not found." }
+  if (project.lead_id === leadId) return { success: "No change." }
+
+  const { error } = await supabase.rpc("assign_project_lead", {
+    p_project: projectId,
+    p_lead: leadId,
+  })
+  if (error) return { error: error.message }
+
+  if (leadId) {
+    await notify(supabase, {
+      userIds: [leadId],
+      orgId: project.org_id,
+      type: "project_lead_assigned",
+      title: "You're now leading a project",
+      body: `${project.name} — you triage its tickets and own its delivery schedule.`,
+      link: `/projects/${projectId}`,
+      exceptUserId: user.id,
+    })
+  }
+
+  revalidatePath("/projects")
+  revalidatePath(`/projects/${projectId}`)
+  revalidatePath("/dashboard")
+  revalidatePath("/schedule")
+  revalidatePath("/team-tracking")
+  revalidatePath("/", "layout") // the sidebar shows Team tracking only to leads
+
+  return {
+    success: leadId ? "Project lead updated." : "Project lead cleared.",
+  }
 }
 
 export async function archiveProject(id: string) {
